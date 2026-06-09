@@ -8,6 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 
 from app.config import PROJECT_ROOT, settings
+from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
 
 COLLECTION_NAME = "swiss_wealth_docs"
 
@@ -24,17 +25,9 @@ def run_ingestion(source_dir: str) -> dict:
         raise ValueError(f"No documents found in {source_path}")
 
 
-    # Embeds chunks
-    LlamaSettings.embed_model = OpenAIEmbedding(
-        model=settings.embedding_model,
-        api_key=settings.openai_api_key
-    )
+    configure_embeddings()
 
-
-    # Persists vectors under vector_store/
-    settings.vector_store_path.mkdir(parents=True, exist_ok=True)
-
-    chroma_client=chromadb.PersistentClient(path=str(settings.vector_store_path))
+    chroma_client=get_chroma_client()
 
     # Replaces the index instead of duplicating
     try:
