@@ -1,0 +1,1 @@
+# swiss-wealth-rag-assistant
