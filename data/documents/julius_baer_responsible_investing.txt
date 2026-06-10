@@ -1,0 +1,51 @@
+Julius Baer — Responsible Investing
+
+This synthetic demonstration document summarises responsible investing themes relevant to private banking clients. It is not an official Julius Baer publication.
+
+Overview
+
+Responsible investing seeks to integrate environmental, social, and governance considerations into investment decisions. For private clients, it can serve several purposes: improving long-term risk analysis, aligning portfolios with personal values, identifying structural opportunities, and supporting broader societal outcomes.
+
+Responsible investing is not a single strategy. It can include ESG integration, exclusions, best-in-class approaches, thematic sustainable investing, impact investing, stewardship, and customised client mandates.
+
+Client motivations
+
+Private clients have different motivations. Some prioritise financial materiality and want to understand how sustainability issues affect corporate performance. Others want portfolios that reflect ethical or family values. Some are interested in impact, climate transition, or philanthropy-linked investing.
+
+An advisor must clarify these motivations before recommending a strategy. A client seeking measurable impact may need a different approach from a client seeking broad ESG integration.
+
+ESG integration
+
+ESG integration means considering environmental, social, and governance factors alongside financial analysis. Environmental factors may include emissions, resource use, pollution, and climate adaptation. Social factors may include labour practices, safety, human rights, and product responsibility. Governance factors may include board quality, shareholder rights, incentives, transparency, and risk oversight.
+
+ESG integration does not automatically exclude companies. It aims to improve understanding of risks and opportunities.
+
+Thematic responsible investing
+
+Thematic strategies may focus on areas such as renewable energy, healthcare, education, water, sustainable food, circular economy, or digital inclusion. These themes can align with long-term structural change.
+
+However, thematic strategies may be concentrated and volatile. Portfolio sizing and diversification remain important.
+
+Impact investing
+
+Impact investing seeks intentional and measurable positive outcomes alongside financial returns. It may involve private markets, public equities, bonds, or blended structures. Measurement is a core challenge because investors must define what outcome is expected and how it will be assessed.
+
+Family values and next-generation engagement
+
+Responsible investing can be useful in family governance. Younger generations may be strongly interested in sustainability and impact. Discussing responsible investing preferences can help families articulate shared values and educate members about trade-offs.
+
+Risk management
+
+Responsible investing should not ignore traditional risk management. Sustainable companies can still be overvalued. Impact strategies can still fail. Governance, liquidity, valuation, and concentration risks must be considered.
+
+Data and transparency
+
+Data quality is a challenge. Ratings providers may disagree, and companies may report selectively. Advisors should explain methodology and limitations clearly. Transparency helps clients understand what is actually being implemented.
+
+RAG assistant use case
+
+A RAG assistant could help advisors retrieve approved explanations of ESG integration, thematic investing, impact investing, and client suitability. It could also compare responsible investing approaches across different banks.
+
+Conclusion
+
+Responsible investing offers private clients a way to combine financial analysis with environmental, social, governance, and personal considerations. A credible approach requires clarity of objectives, disciplined analysis, and transparent reporting.

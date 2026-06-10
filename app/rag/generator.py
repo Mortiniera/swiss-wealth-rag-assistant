@@ -13,7 +13,8 @@ INSUFFICIENT_INFO_MESSAGE = (
 def _build_context(chunks: list[dict]) -> str:
     parts = []
     for i, chunk in enumerate(chunks, start=1):
-        parts.append(f"[Source {i}: {chunk['source']}]\n{chunk['text']}")
+        label = f"{chunk['institution']} — {chunk['document_title']}"
+        parts.append(f"[Source {i}: {label}]\n{chunk['text']}")
     return "\n\n".join(parts)
 
 
@@ -51,9 +52,11 @@ def generate_answer(question: str) -> dict:
         "answer" : response.text.strip(),
         "sources" : [
             {
-                "source" : chunk["source"],
-                "chunk_id" : chunk["chunk_id"],
-                "score": chunk["score"]
+                "institution": chunk["institution"],
+                "document_title": chunk["document_title"],
+                "source_file": chunk["source_file"],
+                "chunk_id": chunk["chunk_id"],
+                "score": chunk["score"],
             }
             for chunk in chunks
         ]

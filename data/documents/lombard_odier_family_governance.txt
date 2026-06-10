@@ -1,0 +1,63 @@
+Lombard Odier — Family Governance and Succession
+
+This synthetic demonstration document summarises public themes commonly associated with private banking, family governance, and succession planning in a Lombard Odier-style wealth management context. It is not an official Lombard Odier publication.
+
+Introduction
+
+For many private banking clients, wealth management is not limited to investment performance. It also involves preserving family cohesion, preparing succession, transferring responsibility to the next generation, and establishing governance frameworks that can survive changes in markets, family structure, and business ownership. A private bank with a long-term advisory orientation can play a role in helping families organise these questions.
+
+Family governance becomes especially important when wealth is connected to entrepreneurial success, operating businesses, cross-border assets, philanthropy, or several generations of beneficiaries. Without clear governance, families may face ambiguity around decision rights, investment objectives, liquidity needs, and the role of individual family members.
+
+Core objectives of family governance
+
+The purpose of family governance is to create a framework for decision-making. It does not eliminate disagreement, but it can provide a structure for discussing disagreements constructively. A governance framework may define who participates in decisions, how information is shared, how family members are educated, how conflicts are managed, and how shared assets are supervised.
+
+Common objectives include wealth preservation, continuity of values, responsible ownership, preparation of younger generations, and clarity around roles. In some cases, the family may want to preserve an operating business. In others, the priority may be diversified financial assets, philanthropy, or the responsible management of liquidity after a business sale.
+
+Succession planning
+
+Succession planning is often one of the most sensitive areas of wealth planning. It involves legal, fiscal, emotional, and strategic dimensions. A business founder may need to decide whether the next generation will take operational control, whether professional management should be appointed, or whether a sale should be considered. Family members may have different ambitions and different levels of involvement.
+
+A structured process helps clarify the options. Advisors may support families by mapping assets, identifying stakeholders, documenting objectives, coordinating external legal and tax specialists, and helping evaluate governance models. The aim is to reduce uncertainty and avoid rushed decisions during periods of stress.
+
+Family constitutions and decision frameworks
+
+Some families create a family constitution or charter. This document can describe shared principles, family values, investment philosophy, roles, responsibilities, communication processes, and rules for participation in family councils or investment committees. It is not always legally binding, but it can provide a reference point for future decisions.
+
+Decision frameworks may also separate different domains. Business decisions, family office decisions, investment decisions, philanthropy decisions, and personal financial decisions may require different governance bodies. Clear separation reduces confusion and helps ensure that appropriate expertise is involved.
+
+Next-generation education
+
+Preparing the next generation is a central part of long-term wealth preservation. Younger family members may need education in financial markets, responsible ownership, entrepreneurship, philanthropy, risk management, and governance. The goal is not only technical knowledge. It is also to build confidence, accountability, and awareness of the responsibilities associated with wealth.
+
+Education may include workshops, mentoring, investment committee observation, philanthropic projects, or gradual involvement in family structures. A private bank can facilitate education by providing access to specialists and structured learning formats.
+
+Philanthropy and purpose
+
+Many families view philanthropy as a way to express shared purpose. Philanthropic planning may involve defining causes, selecting structures, evaluating impact, and deciding how family members will participate. Foundations, donor-advised structures, and direct giving programmes can be considered depending on objectives and jurisdiction.
+
+Philanthropy can also become a practical governance tool. It may allow younger generations to participate in decision-making, evaluate projects, and develop shared values before taking on broader family responsibilities.
+
+Cross-border complexity
+
+International families often face additional complexity. Assets, residences, citizenship, business interests, and beneficiaries may span several countries. This creates legal, tax, reporting, and succession challenges. Coordination between advisors is essential to avoid fragmented planning.
+
+A wealth management advisor does not replace legal or tax counsel, but can help coordinate the overall process and ensure that investment structures remain aligned with the family's long-term objectives.
+
+Investment policy
+
+Families with significant wealth often benefit from a formal investment policy. This document may define target asset allocation, risk tolerance, liquidity requirements, spending rules, responsible investing preferences, and decision authority. It helps prevent emotional decision-making during market volatility.
+
+The investment policy should reflect both financial goals and family governance realities. For example, a family with many beneficiaries may require more liquidity than a founder-controlled structure. A family with strong sustainability preferences may incorporate exclusions, thematic allocations, or impact objectives.
+
+Role of technology
+
+Digital reporting and secure communication platforms can improve transparency. Family members may access consolidated reporting, meeting materials, investment committee documents, or educational resources. However, confidentiality and cybersecurity are essential. Digital convenience must be balanced with privacy and governance control.
+
+Potential RAG use case
+
+A RAG assistant over family governance documents could support advisors by locating relevant sections on succession planning, family constitutions, next-generation education, philanthropy, and cross-border planning. It could also help compare governance themes across institutions. However, the assistant should avoid giving legal or tax advice and should clearly ground answers in available documents.
+
+Conclusion
+
+Family governance and succession planning are central to long-term private banking relationships. The objective is to help families convert financial wealth into durable structures, shared understanding, and responsible decision-making. A strong governance framework combines planning, communication, education, and disciplined investment oversight.

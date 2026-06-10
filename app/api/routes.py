@@ -4,13 +4,23 @@ from app.models.schemas import (
     AskRequest,
     AskResponse,
     IngestRequest,
-    IngestResponse
+    IngestResponse,
+    RootResponse
 )
 
 from app.rag.generator import generate_answer
 from app.rag.ingest import run_ingestion
 
 router = APIRouter()
+
+@router.get("/", response_model=RootResponse)
+def root():
+    return RootResponse(
+        name="Swiss Wealth RAG Assistant",
+        status="running",
+        docs="/docs",
+        health="/health",
+    )
 
 @router.get("/health")
 def health_check():

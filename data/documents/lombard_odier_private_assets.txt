@@ -1,0 +1,53 @@
+Lombard Odier — Private Assets and Alternative Investments
+
+This synthetic demonstration document summarises general private banking themes around private assets, alternatives, and long-term capital allocation. It is inspired by public wealth management themes but is not an official Lombard Odier publication.
+
+Overview
+
+Private assets have become an increasingly important component of wealth management for sophisticated private clients, entrepreneurs, and family offices. Private assets may include private equity, private credit, infrastructure, real estate, venture capital, and specialist alternative strategies. These investments can provide access to opportunities not available in public markets, but they also require careful suitability analysis.
+
+Long-term investors may consider private assets for several reasons. They can provide diversification, exposure to innovation, potential illiquidity premia, and access to structural growth themes. At the same time, they involve complexity, longer holding periods, less frequent valuation, and limited liquidity. A private bank's role is to help clients understand both the potential benefits and the constraints.
+
+Private equity
+
+Private equity gives investors exposure to privately held companies. Strategies may include buyout, growth equity, venture capital, and secondary investments. Buyout strategies typically focus on established companies where operational improvements or strategic repositioning may create value. Growth equity targets companies expanding rapidly but not necessarily ready for public markets. Venture capital provides exposure to earlier-stage innovation but carries higher dispersion of outcomes.
+
+Private equity can be attractive because many companies remain private for longer. Investors who rely only on public equities may miss part of the growth cycle. However, manager selection is critical. Performance dispersion between top and bottom managers can be significant.
+
+Private credit
+
+Private credit involves lending outside traditional public bond markets. Borrowers may include mid-sized companies, real estate projects, infrastructure assets, or specialist financing vehicles. Private credit can offer income potential and contractual protection, but it requires careful analysis of credit quality, covenants, collateral, and economic sensitivity.
+
+In a wealth management portfolio, private credit may complement traditional fixed income. However, it should not be treated as risk-free income. Illiquidity, default risk, refinancing risk, and valuation opacity must be considered.
+
+Infrastructure and real assets
+
+Infrastructure strategies invest in assets such as energy networks, transport systems, digital infrastructure, water assets, and social infrastructure. These assets may offer long-term cash flows linked to essential services. Some infrastructure investments also connect directly with sustainability themes such as renewable energy, grid upgrades, electrification, and energy efficiency.
+
+Real assets can provide inflation sensitivity and diversification. However, they can also be exposed to regulation, construction risk, operational risk, interest rates, and political considerations.
+
+Portfolio integration
+
+Private assets should be integrated into a total portfolio view. The key questions are not only whether an investment is attractive, but whether it fits the client's objectives. Advisors must consider liquidity needs, time horizon, existing business exposure, concentration risk, tax considerations, and the family's governance process.
+
+For entrepreneurs, private asset exposure may overlap with existing business risk. A founder who already holds a large illiquid stake in a private company may need additional diversification rather than more illiquid private equity. A family office with long-term capital and institutional governance may have more capacity for alternatives.
+
+Due diligence
+
+Due diligence is essential. Investors should understand strategy, manager track record, team stability, fee structure, reporting quality, valuation methodology, liquidity terms, and alignment of interest. Legal documentation and operational infrastructure also matter.
+
+Sustainable private assets
+
+Private assets can support transition themes. Infrastructure investments may finance renewable power, storage, transport, or digital systems. Growth equity may support companies developing resource-efficient technologies. Private credit may fund projects linked to energy efficiency or climate adaptation. However, sustainability claims should be assessed carefully to avoid superficial classification.
+
+Reporting and transparency
+
+Private assets often require different reporting expectations than public markets. Valuations may be quarterly rather than daily. Performance may be measured using internal rate of return, multiple on invested capital, distributions to paid-in capital, and other private market metrics. Clients need education to interpret these measures.
+
+RAG assistant use case
+
+A RAG assistant can help advisors retrieve explanations of private equity, private credit, infrastructure, liquidity constraints, and suitability considerations. It can support education and preparation for client discussions. The assistant should not recommend specific funds unless the corpus contains approved material and suitability checks are performed separately.
+
+Conclusion
+
+Private assets can play a meaningful role in long-term wealth management, especially for clients with sufficient liquidity and governance capacity. They offer access to non-public opportunities and structural themes, but require disciplined due diligence, manager selection, and portfolio integration.

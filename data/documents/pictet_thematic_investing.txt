@@ -1,0 +1,47 @@
+Pictet — Thematic Investing Strategies
+
+This synthetic demonstration document summarises themes commonly associated with thematic investing. It is inspired by public descriptions of thematic equity strategies but is not an official Pictet publication.
+
+Overview
+
+Thematic investing focuses on long-term structural forces that can shape economic activity independently of short-term market cycles. Instead of organising portfolios only by geography or sector, thematic strategies seek exposure to companies whose growth may be influenced by megatrends such as digitalisation, demographic change, environmental transition, urbanisation, automation, and healthcare innovation.
+
+A thematic approach requires disciplined research. Themes must be economically meaningful, investable, long-term, and supported by identifiable value chains. Investors must avoid superficial narratives and evaluate whether companies truly derive revenues from the theme.
+
+Megatrends
+
+Megatrends are broad forces that unfold over many years. Examples include population ageing, resource scarcity, climate transition, rising healthcare demand, automation, artificial intelligence, infrastructure modernisation, and changing consumption patterns. These forces can create new markets, disrupt existing industries, and change competitive dynamics.
+
+Thematic strategies translate megatrends into investment universes. For example, the water theme may include companies involved in water treatment, infrastructure, metering, testing, and efficiency. A robotics theme may include automation equipment, sensors, software, and industrial technology. A nutrition theme may include food quality, agricultural productivity, and health-oriented consumption.
+
+Research process
+
+A strong thematic research process begins with defining the theme precisely. Analysts identify the value chain, revenue drivers, regulatory context, technology evolution, and competitive landscape. Companies are evaluated based on thematic purity, financial quality, valuation, governance, and risk.
+
+Thematic purity matters because a company may be associated with a theme but derive only a small portion of revenue from it. Investors should understand whether exposure is meaningful.
+
+Portfolio construction
+
+Thematic portfolios can provide growth exposure, but they may also be concentrated. A portfolio focused on one theme can be volatile if investor sentiment changes or if valuations become stretched. Diversification across companies, regions, and subsegments is important.
+
+Thematic strategies can be used as satellite allocations within a diversified portfolio. They should complement rather than replace strategic asset allocation.
+
+Sustainability connection
+
+Many themes overlap with sustainability. Clean energy, water, timber, nutrition, health, and circular economy strategies can align with environmental or social objectives. However, sustainability alignment should be analysed rather than assumed. Each company should be assessed for both contribution and risk.
+
+Risks
+
+Thematic investing involves several risks. A theme may develop more slowly than expected. Competition may erode margins. Regulation may change. Valuations may become excessive. Technologies may fail to scale. Investors must separate long-term conviction from short-term enthusiasm.
+
+Client communication
+
+Private clients may find thematic investing intuitive because themes are connected to real-world changes. Advisors can explain investments through trends rather than technical market categories. However, communication should include risks, time horizon, and portfolio role.
+
+RAG assistant use case
+
+A RAG assistant can answer questions such as: What is thematic investing? Which themes are linked to sustainability? What are the risks of thematic portfolios? How does thematic investing differ from sector investing? Source attribution helps users verify answers.
+
+Conclusion
+
+Thematic investing seeks to capture long-term structural growth opportunities. It requires clear theme definition, disciplined company research, valuation awareness, and careful portfolio construction.
