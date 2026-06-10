@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     llm_model: str = "gpt-5.4-mini"
 
+    auto_ingest_on_startup: bool = True
+
     @property
     def documents_path(self) -> Path:
         return PROJECT_ROOT / self.documents_dir

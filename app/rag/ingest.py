@@ -46,3 +46,17 @@ def run_ingestion(source_dir: str) -> dict:
         "chunks_created" : collection.count()
     }
 
+
+def is_index_ready() -> bool:
+    chroma_client = get_chroma_client()
+    try:
+        collection = chroma_client.get_collection(COLLECTION_NAME)
+        return collection.count() > 0
+    except Exception:
+        return False
+
+def ensure_index(source_dir: str = "data/documents") -> dict | None:
+    if is_index_ready():
+        return None
+    return run_ingestion(source_dir)
+
