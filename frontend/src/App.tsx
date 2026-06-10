@@ -1,4 +1,5 @@
 import { ChatWindow } from "./components/ChatWindow";
+import { Footer } from "./components/Footer";
 import "./App.css";
 
 function App() {
@@ -12,6 +13,8 @@ function App() {
       <main>
         <ChatWindow />
       </main>
+
+      <Footer />
     </div>
   );
 }
