@@ -27,6 +27,26 @@ Public summaries from four Swiss private banks (Lombard Odier, UBS, Pictet, Juli
 
 Interactive docs: `http://localhost:8000/docs`
 
+---
+
+## Architecture
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
+│   Client    │────▶│  FastAPI     │────▶│  Retriever  │────▶│   ChromaDB   │
+│  (curl/UI)  │     │  /ask        │     │  (top-k)    │     │ vector_store │
+└─────────────┘     └──────┬───────┘     └─────────────┘     └──────────────┘
+                           │
+                           ▼
+                    ┌──────────────┐     ┌─────────────┐
+                    │  Generator   │────▶│   OpenAI    │
+                    │  (prompt)    │     │     LLM     │
+                    └──────────────┘     └─────────────┘
+
+Startup (lifespan):
+  ensure_index() → ingest if vector store is empty
+```
+
 ### Example
 
 ```bash
