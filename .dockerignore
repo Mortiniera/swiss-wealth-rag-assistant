@@ -1,0 +1,8 @@
+.venv/
+vector_store/
+.env
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.md
