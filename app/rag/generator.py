@@ -44,6 +44,7 @@ def generate_answer(question: str) -> dict:
 
     # If not relevance to the asked question, no LLM call, help to prevent hallucination
     if not chunks or chunks[0]["score"] < MIN_RELEVANCE_SCORE:
+        top_score = chunks[0]["score"] if chunks else 0.0
         logger.info(
             "Fallback triggered (top_score=%.4f, threshold=%.2f)",
             top_score,
