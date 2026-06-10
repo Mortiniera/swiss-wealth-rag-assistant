@@ -9,6 +9,9 @@ from app.config import PROJECT_ROOT
 from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
 from app.rag.metadata import enrich_document_metadata
 
+import logging
+logger = logging.getLogger(__name__)
+
 def _attach_metadata(documents: list) -> None:
     for doc in documents:
         file_name = doc.metadata.get("file_name", "unknown")
@@ -46,10 +49,18 @@ def run_ingestion(source_dir: str) -> dict:
         storage_context=storage_context
     )
 
+    chunk_count = collection.count()
+    logger.info(
+        "Ingestion complete: documents=%d chunks=%d source_dir=%s",
+        len(documents),
+        chunk_count,
+        source_path,
+    )
+
     return {
         "status" : "success",
         "documents_indexed" : len(documents),
-        "chunks_created" : collection.count()
+        "chunks_created" : chunk_count
     }
 
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+import logging
 
 from app.models.schemas import (
     AskRequest,
@@ -10,6 +11,8 @@ from app.models.schemas import (
 
 from app.rag.generator import generate_answer
 from app.rag.ingest import run_ingestion
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -32,6 +35,14 @@ def ingest(request: IngestRequest):
 
     try:
         result = run_ingestion(request.source_dir)
+
+        logger.info(
+            "Ingest requested: source_dir=%s documents=%d chunks=%d",
+            request.source_dir,
+            result["documents_indexed"],
+            result["chunks_created"],
+        )
+
         return IngestResponse(**result)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -42,6 +53,7 @@ def ingest(request: IngestRequest):
 def ask(request: AskRequest):
 
     try:
+        logger.info("Question received (length=%d)", len(request.question))
         result = generate_answer(request.question)
         return AskResponse(**result)
     except ValueError as e:
