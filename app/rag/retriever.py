@@ -1,9 +1,6 @@
-import chromadb
-from llama_index.core import Settings as LlamaSettings, VectorStoreIndex
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
-from app.config import settings
 from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
 
 

@@ -1,16 +1,12 @@
 from pathlib import Path
 
-import chromadb
-from llama_index.core import Settings as LlamaSettings
+
 from llama_index.core import SimpleDirectoryReader, StorageContext, VectorStoreIndex
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 
-from app.config import PROJECT_ROOT, settings
+from app.config import PROJECT_ROOT
 from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
-
-COLLECTION_NAME = "swiss_wealth_docs"
 
 def run_ingestion(source_dir: str) -> dict:
 

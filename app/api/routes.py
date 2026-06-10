@@ -7,6 +7,7 @@ from app.models.schemas import (
     IngestResponse
 )
 
+from app.rag.generator import generate_answer
 from app.rag.ingest import run_ingestion
 
 router = APIRouter()
@@ -29,7 +30,11 @@ def ingest(request: IngestRequest):
 
 @router.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest):
-    raise NotImplementedError("Not implemented yet")
 
+    try:
+        result = generate_answer(request.question)
+        return AskResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
