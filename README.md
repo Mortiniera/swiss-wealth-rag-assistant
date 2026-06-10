@@ -47,8 +47,6 @@ On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) a
 
 ## Architecture
 
-![Architecture diagram](docs/assets/architecture.png)
-
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
 │   Client    │────▶│  FastAPI     │────▶│  Retriever  │────▶│   ChromaDB   │
