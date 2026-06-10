@@ -3,6 +3,8 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
 
+import logging
+logger = logging.getLogger(__name__)
 
 TOP_K = 3
 
@@ -43,5 +45,15 @@ def retrieve(question: str, top_k: int = TOP_K) -> list[dict]:
             "chunk_id": node.node_id,
             "score": round(node.score, 4) if node.score is not None else 0.0,
         })
+
+    if results:
+        logger.info(
+            "Retrieved %d chunks (top score=%.4f, source=%s)",
+            len(results),
+            results[0]["score"],
+            results[0]["source_file"],
+        )
+    else:
+        logger.info("Retrieved 0 chunks")
 
     return results

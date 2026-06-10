@@ -1,0 +1,33 @@
+[
+    {
+        "question": "How do Swiss private banks approach sustainable investing?",
+        "expected_sources": [
+            "lombard_odier.txt",
+            "lombard_odier_sustainability_transition.txt"
+        ]
+    },
+    {
+        "question": "What thematic investing strategies does Pictet discuss?",
+        "expected_sources": [
+            "pictet_thematic_investing.txt",
+            "pictet.txt"
+        ]
+    },
+    {
+        "question": "How does UBS support family office clients?",
+        "expected_sources": [
+            "ubs_family_office.txt"
+        ]
+    },
+    {
+        "question": "What services does Julius Baer offer business owners?",
+        "expected_sources": [
+            "julius_baer_business_owners.txt",
+            "julius_baer.txt"
+        ]
+    },
+    {
+        "question": "What is the capital of Sweden?",
+        "expect_fallback": true
+    }
+]
