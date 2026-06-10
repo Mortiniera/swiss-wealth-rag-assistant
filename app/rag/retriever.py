@@ -35,7 +35,11 @@ def retrieve(question: str, top_k: int = TOP_K) -> list[dict]:
     for node in nodes:
         results.append({
             "text": node.get_content(),
-            "source": node.metadata.get("file_name", "unknown"),
+            "institution": node.metadata.get("institution", "unknown"),
+            "document_title": node.metadata.get("document_title", "Unknown"),
+            "source_file": node.metadata.get(
+                "source_file", node.metadata.get("file_name", "unknown")
+            ),
             "chunk_id": node.node_id,
             "score": round(node.score, 4) if node.score is not None else 0.0,
         })

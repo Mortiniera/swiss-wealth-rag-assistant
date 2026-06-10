@@ -1,0 +1,61 @@
+UBS — Strategic Asset Allocation
+
+This synthetic demonstration document summarises public themes associated with UBS-style global wealth management, strategic asset allocation, and disciplined portfolio construction. It is not an official UBS publication.
+
+Introduction
+
+Strategic asset allocation is the process of defining a long-term portfolio mix aligned with an investor's objectives, risk tolerance, liquidity needs, and time horizon. In global wealth management, it is often considered one of the most important drivers of long-term portfolio outcomes. The allocation across equities, fixed income, cash, alternatives, and private markets shapes expected return, volatility, drawdown risk, and income generation.
+
+A global wealth manager such as UBS serves a wide range of clients, including private individuals, entrepreneurs, ultra-high-net-worth families, and family offices. These clients may have different objectives, but all require a disciplined framework for converting goals into portfolio decisions.
+
+Client objectives
+
+The asset allocation process begins with understanding the client's financial situation. Important questions include: What is the investment horizon? How much liquidity is needed? Is the portfolio intended to generate income, preserve capital, fund philanthropy, support family spending, or grow over generations? Are there large concentrated assets such as business ownership, real estate, or private company shares?
+
+Risk tolerance is both financial and emotional. Some clients can mathematically afford volatility but may not tolerate large drawdowns psychologically. Others have long horizons and institutional-style governance structures that allow them to accept illiquidity and market fluctuations.
+
+Core asset classes
+
+Equities provide long-term growth potential but are exposed to market volatility, valuation changes, earnings risk, and geopolitical uncertainty. Fixed income may provide income, diversification, and capital preservation, but is exposed to interest rates, inflation, and credit risk. Cash provides liquidity and stability but may lose purchasing power during periods of inflation.
+
+Alternative investments can include hedge funds, private equity, private credit, real estate, infrastructure, and commodities. These strategies may improve diversification but introduce complexity and liquidity constraints.
+
+Diversification
+
+Diversification is a central principle. A portfolio concentrated in a single company, sector, region, or currency can be vulnerable to specific shocks. Global diversification seeks to reduce dependence on any single driver of performance. Diversification does not eliminate losses, but it can improve resilience.
+
+For entrepreneurs, diversification may be particularly important after a liquidity event. A founder whose wealth is concentrated in one business may need to convert part of that wealth into a diversified financial portfolio.
+
+Tactical adjustments
+
+Strategic allocation defines the long-term framework. Tactical asset allocation allows moderate adjustments based on current market conditions, valuations, policy expectations, and economic outlook. Tactical decisions should not undermine the long-term plan. They should be documented, risk-aware, and consistent with the client's objectives.
+
+Examples of tactical considerations include changes in central bank policy, inflation expectations, recession risks, credit spreads, equity valuations, and currency movements.
+
+Scenario analysis
+
+Scenario analysis helps evaluate how portfolios might behave under different conditions. For example, advisors may examine inflation shocks, interest rate increases, equity drawdowns, currency moves, or liquidity stress. This is useful because historical averages do not capture all possible future outcomes.
+
+Stress testing is particularly important for complex portfolios involving leverage, alternatives, private markets, or concentrated holdings.
+
+Sustainable and thematic considerations
+
+Strategic allocation can also incorporate sustainability preferences or thematic exposures. A client may want to allocate capital toward climate transition, healthcare innovation, digital infrastructure, or resource efficiency. These themes must still be integrated within the overall risk-return framework.
+
+Thematic allocations should not replace diversification. They should be sized appropriately and monitored like any other investment exposure.
+
+Role of research
+
+Global research informs asset allocation through economic forecasts, capital market assumptions, valuation analysis, and risk monitoring. Research teams may update views regularly as conditions evolve. However, disciplined investors avoid changing strategy purely because of short-term market noise.
+
+Technology and reporting
+
+Digital reporting platforms help clients monitor allocation, performance, risk, liquidity, and exposures. Analytics can highlight concentration risk, currency exposure, and portfolio drift. Artificial intelligence may support document search, investment research summarisation, and operational efficiency, but human advisors remain central to suitability and judgement.
+
+RAG assistant use case
+
+A RAG assistant over asset allocation documents could answer questions such as: What is strategic asset allocation? Why is diversification important? How are alternatives used in portfolios? What risks are considered in scenario analysis? Source attribution is important because investment explanations must be grounded in approved material.
+
+Conclusion
+
+Strategic asset allocation provides a disciplined foundation for long-term wealth management. It connects client objectives with portfolio design, diversification, risk management, and ongoing review. A successful process balances long-term principles with the flexibility to respond thoughtfully to changing conditions.

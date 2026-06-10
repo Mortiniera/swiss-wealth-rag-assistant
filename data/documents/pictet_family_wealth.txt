@@ -1,0 +1,57 @@
+Pictet — Family Wealth Preservation
+
+This synthetic demonstration document summarises themes related to family wealth, preservation, governance, and long-term private banking advice. It is not an official Pictet publication.
+
+Introduction
+
+Family wealth preservation is a core concern for private banking clients. The objective is not only to grow assets, but to maintain financial resilience, prepare future generations, preserve family cohesion, and structure wealth in a way that supports long-term goals.
+
+Families may face challenges including market volatility, succession, tax complexity, cross-border assets, business ownership, philanthropy, and differing expectations among family members. A private bank can support these discussions by combining investment management with planning and governance expertise.
+
+Protect, grow, and control wealth
+
+A family wealth framework often focuses on protecting, growing, and controlling wealth. Protection involves risk management, diversification, liquidity planning, estate planning, and governance. Growth involves disciplined investment management, access to opportunities, and long-term asset allocation. Control involves decision structures, reporting, family communication, and clear responsibilities.
+
+These dimensions are interconnected. A growth-oriented portfolio without governance may create conflict. A conservative structure without investment discipline may fail to preserve purchasing power. A legal structure without family education may not succeed across generations.
+
+Governance
+
+Governance provides a framework for collective decision-making. Families may define investment committees, family councils, voting rules, roles, reporting processes, and principles for participation. Governance can also clarify the relationship between family members, operating businesses, and external advisors.
+
+Good governance is particularly important when several generations are involved. The founder's informal decision style may not work when ownership becomes more distributed.
+
+Succession
+
+Succession planning should start before a crisis. It may involve ownership transfer, leadership transition, estate planning, tax coordination, and next-generation preparation. Families with operating businesses must consider whether the business should remain family-controlled, be professionally managed, or be sold.
+
+Succession also includes psychological and educational dimensions. Younger family members need time to develop capability and legitimacy.
+
+Investment policy
+
+A formal investment policy can help families align expectations. It may define objectives, time horizon, risk budget, liquidity needs, asset allocation, responsible investing preferences, and governance processes. It becomes a reference during periods of volatility.
+
+The policy should be reviewed regularly as family circumstances evolve. Births, deaths, marriages, business sales, relocation, and regulatory changes can all affect planning needs.
+
+Philanthropy
+
+Philanthropy can be a meaningful expression of family identity. Families may create foundations, support specific causes, or develop impact strategies. Philanthropy can also help educate younger generations by involving them in project evaluation and decision-making.
+
+A structured philanthropic approach defines mission, governance, funding, selection criteria, monitoring, and impact reporting.
+
+Education
+
+Education is essential for continuity. Family members may need training in financial markets, portfolio risk, entrepreneurship, governance, philanthropy, sustainability, and responsible ownership. Education can be formal or experiential.
+
+Private banks may support education through workshops, curated content, meetings with specialists, and participation in governance processes.
+
+Technology and reporting
+
+Digital reporting helps families monitor assets, performance, risk, and documents. Consolidated reporting is especially valuable for families with multiple entities, jurisdictions, and custodians. However, digital systems must respect confidentiality and access controls.
+
+RAG assistant use case
+
+A RAG assistant over family wealth documents could help retrieve content on governance, succession, investment policy, philanthropy, and next-generation education. It can support preparation for client discussions while maintaining source transparency.
+
+Conclusion
+
+Family wealth preservation requires more than portfolio management. It combines planning, governance, education, investment policy, and communication. The strongest frameworks help families make better decisions together over time.

@@ -1,0 +1,53 @@
+UBS — Family Office and Ultra High Net Worth Services
+
+This synthetic demonstration document summarises public themes around UBS family office and ultra-high-net-worth services. It is not an official UBS publication.
+
+Overview
+
+Family offices and ultra-high-net-worth individuals often require services that go beyond standard private banking. Their needs may combine investment management, governance, reporting, philanthropy, lending, operating business interests, private markets, real estate, art collections, and cross-border planning. A global wealth manager can support these clients by connecting specialists across investment banking, asset management, wealth planning, and external advisory networks.
+
+Family office clients often operate with institutional expectations. They may require consolidated reporting, access to investment opportunities, risk management, manager selection, liquidity planning, and governance support. They may also need advice on how to organise their own internal team.
+
+Interconnected wealth
+
+For many wealthy families, financial assets are only one component of total wealth. Other components may include family-controlled businesses, direct investments, private equity holdings, real estate, foundations, art, and philanthropic vehicles. These assets are interconnected. A financing decision involving a business may affect personal liquidity. A private market commitment may affect future cash flow. A governance decision may affect investment strategy.
+
+An advisory process must therefore take a holistic view. The objective is to understand how different assets, liabilities, goals, and family structures interact.
+
+Investment solutions
+
+Family offices may seek both traditional and alternative investments. Traditional allocations include equities, fixed income, and cash management. Alternatives may include hedge funds, private equity, private credit, infrastructure, real estate, and direct co-investments.
+
+Some family offices seek differentiated access to private opportunities. This requires due diligence, network access, legal review, and governance capacity. Not every opportunity is suitable for every family. The investment process should assess risk, liquidity, concentration, and alignment with long-term objectives.
+
+Risk management
+
+Family offices face risks similar to institutional investors but often with additional complexity. Risks may include market volatility, concentration in operating companies, leverage, currency exposure, illiquid assets, cyber risk, governance disputes, and succession uncertainty.
+
+Risk management can involve consolidated reporting, asset-liability analysis, stress testing, scenario planning, and independent oversight. Families may also create investment committees to ensure disciplined decision-making.
+
+Philanthropy and legacy
+
+Many family offices pursue philanthropic initiatives. Philanthropy can be structured through foundations, charitable vehicles, donor-advised funds, or direct giving programmes. A strategic approach defines mission, governance, selection criteria, impact measurement, and family involvement.
+
+Legacy planning may also include education for the next generation, family constitutions, and rules for participation in governance bodies. Wealth transfer is not only a legal event; it is also a process of preparing people for responsibility.
+
+Entrepreneurs and liquidity events
+
+Entrepreneurs may approach a family office model after selling a business or receiving significant liquidity. The transition from operating company wealth to financial wealth can be psychologically and technically complex. Founders may need to diversify, build governance, define spending policies, and decide how to engage with future investments.
+
+A liquidity event can also trigger questions about taxation, estate planning, philanthropy, and family communication. Coordinated advice is important.
+
+Technology and reporting
+
+Family offices increasingly rely on technology for consolidated reporting, document management, cybersecurity, and investment analytics. Data aggregation can be challenging because assets may be held across banks, custodians, fund administrators, and private vehicles.
+
+Artificial intelligence may support research, document retrieval, meeting preparation, and operational workflows, but data confidentiality and access control are critical.
+
+RAG assistant use case
+
+A RAG assistant could help a family office team retrieve internal policy documents, investment committee notes, due diligence summaries, and approved educational material. In a public demo corpus, it can answer questions about family office services, alternatives, governance, philanthropy, and risk management.
+
+Conclusion
+
+Family office and ultra-high-net-worth services require holistic advice, institutional-quality investment capabilities, and sensitivity to family governance. The advisory model must connect investment opportunities with planning, risk, reporting, and legacy objectives.

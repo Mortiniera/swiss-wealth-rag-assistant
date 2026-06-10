@@ -1,0 +1,53 @@
+Pictet — Private Markets and Long-Term Capital
+
+This synthetic demonstration document summarises themes related to private markets, alternatives, and long-term capital. It is not an official Pictet publication.
+
+Overview
+
+Private markets offer investors exposure to opportunities beyond public equities and bonds. They may include private equity, private credit, infrastructure, real estate, venture capital, and specialist strategies. For long-term investors, private markets can provide access to structural growth, innovation, and diversification.
+
+Private markets are especially relevant when companies remain private for longer or when infrastructure needs require long-duration capital. However, these investments involve illiquidity, complexity, manager selection risk, and valuation uncertainty.
+
+Private equity
+
+Private equity strategies invest in non-listed companies. They may focus on mature businesses, growth companies, or early-stage ventures. Value creation may come from operational improvements, strategic repositioning, expansion, technology adoption, or financial restructuring.
+
+Investors need to understand the strategy, manager capabilities, fee structure, exit environment, and portfolio concentration. Private equity commitments also require capital planning because money is drawn over time.
+
+Venture capital
+
+Venture capital provides exposure to early-stage innovation. It can capture transformative growth but involves high risk and wide dispersion of outcomes. Many investments may fail, while a small number may drive returns. Manager access and selection are critical.
+
+Venture themes may include artificial intelligence, biotechnology, fintech, cybersecurity, automation, and climate technologies. These areas overlap with long-term thematic investing.
+
+Private credit
+
+Private credit strategies provide financing to companies or assets outside public markets. They can generate income, but they require credit analysis, covenant monitoring, and careful assessment of liquidity and economic sensitivity. Rising interest rates can create both opportunities and risks.
+
+Infrastructure
+
+Infrastructure investments can offer exposure to essential assets such as energy systems, transport, communications, water, and social infrastructure. Some infrastructure themes are connected to sustainability, including renewable energy, grids, electrification, and digital infrastructure.
+
+Infrastructure can provide long-term cash flows, but investors must consider regulation, construction risk, operational complexity, and political factors.
+
+Portfolio role
+
+Private markets may improve diversification and return potential, but they should be sized carefully. Illiquid assets cannot be sold easily during stress. Investors need enough liquid assets to meet spending, commitments, and unexpected needs.
+
+A portfolio may include private markets as a satellite allocation or as a larger component for sophisticated family offices with long horizons.
+
+Due diligence and governance
+
+Private markets require strong governance. Investors should evaluate managers, legal terms, reporting quality, risk controls, valuation processes, and alignment of interest. Family offices may establish investment committees to review commitments.
+
+Sustainability and thematic alignment
+
+Private markets can align with thematic and sustainable investment objectives. For example, infrastructure can support energy transition, venture capital can finance innovation, and growth equity can support companies addressing resource efficiency. However, impact claims should be verified.
+
+RAG assistant use case
+
+A RAG assistant could help users retrieve explanations of private equity, venture capital, infrastructure, private credit, liquidity constraints, and due diligence. It could also compare private market approaches across institutions.
+
+Conclusion
+
+Private markets can be valuable for long-term investors with appropriate liquidity and governance capacity. They provide access to innovation and structural themes, but require discipline, patience, and careful risk management.

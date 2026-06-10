@@ -1,0 +1,53 @@
+Julius Baer — Services for Business Owners
+
+This synthetic demonstration document summarises themes related to private banking services for entrepreneurs and business owners. It is not an official Julius Baer publication.
+
+Introduction
+
+Business owners often have financial lives that are deeply connected to the companies they build. Their wealth may be concentrated in an operating business, their liquidity may depend on company performance, and their personal objectives may overlap with strategic business decisions. Private banking advice for entrepreneurs must therefore consider both personal wealth and business context.
+
+A private bank with an entrepreneurial client focus can support owners before, during, and after key business events such as expansion, succession, sale, merger, financing, or generational transfer.
+
+Concentration risk
+
+Entrepreneurs often hold a large portion of their wealth in one company. This can create significant concentration risk. While the business may have generated wealth, it can also expose the owner to industry cycles, operational risks, regulatory changes, and liquidity constraints.
+
+Diversification is a central topic after a liquidity event or partial sale. The objective is not necessarily to eliminate entrepreneurial exposure, but to create financial resilience outside the business.
+
+Liquidity events
+
+A business sale, IPO, dividend recapitalisation, or partial exit can transform an entrepreneur's balance sheet. Suddenly, illiquid business value becomes financial capital. This transition requires planning around investment policy, tax, estate planning, family communication, philanthropy, and future entrepreneurial activity.
+
+Before a liquidity event, preparation may include personal balance sheet analysis, scenario planning, governance discussions, and coordination with legal and tax advisors.
+
+Succession
+
+Not every business owner wants to sell. Some want the next generation to continue the company. Others prefer professional management, external investors, or gradual transition. Succession planning should consider leadership capability, family expectations, ownership structure, and business strategy.
+
+Family members may have different levels of interest or competence. Clear governance helps avoid conflict.
+
+Investment after exit
+
+After a sale, entrepreneurs may need to shift from operating control to portfolio ownership. This can be challenging because founders are used to direct decision-making. A structured investment policy helps define objectives, asset allocation, risk tolerance, liquidity, and governance.
+
+Some entrepreneurs want to continue investing in private companies or venture opportunities. Others prefer diversification and capital preservation. The right approach depends on personal goals.
+
+Lending and financing
+
+Business owners may need lending solutions linked to personal assets, company shares, real estate, or investment portfolios. Financing can support liquidity, diversification, tax planning, or new investments. However, leverage introduces risk and must be assessed carefully.
+
+Philanthropy and legacy
+
+Entrepreneurs often want to translate business success into broader legacy. Philanthropy, impact investing, foundations, or community projects may become important. A structured approach helps define mission, governance, and measurable outcomes.
+
+Digital services
+
+Business owners value efficiency. Digital reporting, secure communication, and consolidated portfolio views can help them monitor personal and financial information. AI-enabled knowledge tools may support advisors by retrieving relevant planning material quickly.
+
+RAG assistant use case
+
+A RAG assistant over entrepreneur-focused wealth planning documents could answer questions about liquidity events, concentration risk, succession, post-exit investment, and philanthropy. It should avoid giving personalised tax or legal advice.
+
+Conclusion
+
+Private banking for business owners requires understanding entrepreneurship, concentration risk, succession, liquidity events, and family objectives. The advisory process should connect business realities with long-term personal wealth planning.

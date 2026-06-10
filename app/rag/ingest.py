@@ -7,6 +7,12 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from app.config import PROJECT_ROOT
 from app.rag.common import COLLECTION_NAME, configure_embeddings, get_chroma_client
+from app.rag.metadata import enrich_document_metadata
+
+def _attach_metadata(documents: list) -> None:
+    for doc in documents:
+        file_name = doc.metadata.get("file_name", "unknown")
+        doc.metadata.update(enrich_document_metadata(file_name))
 
 def run_ingestion(source_dir: str) -> dict:
 
@@ -20,12 +26,12 @@ def run_ingestion(source_dir: str) -> dict:
     if not documents: 
         raise ValueError(f"No documents found in {source_path}")
 
+    _attach_metadata(documents)
 
     configure_embeddings()
-
     chroma_client=get_chroma_client()
 
-    # Replaces the index instead of duplicating
+    # Replaces the index instead of duplicating it
     try:
         chroma_client.delete_collection(COLLECTION_NAME)
     except Exception:

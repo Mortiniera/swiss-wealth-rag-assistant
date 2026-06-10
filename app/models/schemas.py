@@ -24,7 +24,9 @@ class AskRequest(BaseModel):
 
 
 class Source(BaseModel):
-    source: str
+    institution: str
+    document_title: str
+    source_file: str
     chunk_id: str
     score: float
 
@@ -32,3 +34,9 @@ class Source(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     sources: list[Source]
+
+class RootResponse(BaseModel):
+    name: str
+    status: str
+    docs: str
+    health: str
