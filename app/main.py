@@ -8,6 +8,8 @@ from app.rag.ingest import ensure_index
 
 from app.config import settings
 
+from fastapi.middleware.cors import CORSMiddleware
+
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -35,6 +37,17 @@ app = FastAPI(
     description="RAG API over public Swiss wealth management content",
     version="0.1.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(router)
