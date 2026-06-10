@@ -168,3 +168,28 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.app__footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6b7b6b;
+}
+
+.app__footer p {
+  margin: 0.25rem 0;
+}
+
+.app__footer a {
+  color: #1f4d2e;
+  text-decoration: none;
+}
+
+.app__footer a:hover {
+  text-decoration: underline;
+}
+
+.app__footer-links {
+  color: #8a9a8a;
+}

@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# Swiss Wealth RAG Assistant — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React chat UI for the [Swiss Wealth RAG Assistant](../README.md) backend. Sends questions to `POST /ask` and displays grounded answers with source cards.
 
-Currently, two official plugins are available:
+**Live app:** [swiss-wealth-rag-assistant.vercel.app](https://swiss-wealth-rag-assistant.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- React 19 + TypeScript
+- Vite
+- Fetch API (no extra HTTP client)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- Question input with loading state
+- Conversation thread (client-side state only)
+- Assistant messages with source cards (institution, document title, file, score)
+- Error handling for API failures
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Project structure
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+  api/
+    client.ts           # askQuestion(), types matching backend schemas
+  components/
+    ChatWindow.tsx      # Thread state, API calls
+    MessageBubble.tsx   # User / assistant message layout
+    SourceCard.tsx      # Single source attribution card
+    QueryInput.tsx      # Question form
+  App.tsx
+  main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Local setup
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+From the repo root, start the backend first:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+uvicorn app.main:app --reload
 ```
+
+Then in `frontend/`:
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+### Environment variables
+
+| Variable | Description |
+| -------- | ----------- |
+| `VITE_API_URL` | Backend base URL (default: `http://localhost:8000`) |
+
+Local example (`.env.local`):
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Do not commit `.env` or `.env.local`. Only variables prefixed with `VITE_` are exposed to the browser.
+
+The backend must allow `http://localhost:5173` in CORS (`app/main.py`).
+
+## Build
+
+```bash
+npm run build
+npm run preview   # optional: preview production build locally
+```
+
+## Deploy (Vercel)
+
+1. Import the GitHub repo on [Vercel](https://vercel.com)
+2. Set **Root Directory** to `frontend`
+3. Add environment variable:
+
+   | Name | Value |
+   | ---- | ----- |
+   | `VITE_API_URL` | `https://swiss-wealth-rag-assistant.onrender.com` |
+
+4. Deploy
+5. Add the Vercel URL to `allow_origins` in `app/main.py` and redeploy the backend on Render
+
+## API contract
+
+The UI calls:
+
+```http
+POST {VITE_API_URL}/ask
+Content-Type: application/json
+
+{"question": "..."}
+```
+
+Response shape (see backend `app/models/schemas.py`):
+
+```typescript
+{
+  answer: string;
+  sources: {
+    institution: string;
+    document_title: string;
+    source_file: string;
+    chunk_id: string;
+    score: number;
+  }[];
+}
+```
+
+For backend architecture, ingestion, and deployment details, see the [root README](../README.md).
