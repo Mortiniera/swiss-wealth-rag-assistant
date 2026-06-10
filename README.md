@@ -100,3 +100,13 @@ Limitations (MVP)
 - Single-node ChromaDB (no hosted vector DB)
 - English only
 
+
+## Live demo
+
+**API:** https://swiss-wealth-rag-assistant.onrender.com  
+**Docs:** https://swiss-wealth-rag-assistant.onrender.com/docs
+**Health:** https://swiss-wealth-rag-assistant.onrender.com/health
+
+> On the free tier, the service may sleep after inactivity (cold start ~30–60s).
+> Run `POST /ingest` after each redeploy to rebuild the vector index.
+
