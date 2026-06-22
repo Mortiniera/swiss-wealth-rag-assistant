@@ -11,6 +11,11 @@ export type AskResponse = {
     sources: Source[];
 };
 
+export type ChatMessage = {
+    role: "user" | "assistant";
+    content: string;
+}
+
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -23,11 +28,11 @@ export class ApiError extends Error {
     }
 }
 
-export async function askQuestion(question: string): Promise<AskResponse> {
+export async function askQuestion(question: string, history: ChatMessage[] = []): Promise<AskResponse> {
     const response = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history }),
     });
 
     if (!response.ok) {
