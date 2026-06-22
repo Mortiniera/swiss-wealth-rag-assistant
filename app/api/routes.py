@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 
+from app.assistant.orchestrator import handle_question
 from app.models.schemas import (
     AskRequest,
     AskResponse,
@@ -53,8 +54,13 @@ def ingest(request: IngestRequest):
 def ask(request: AskRequest):
 
     try:
-        logger.info("Question received (length=%d)", len(request.question))
-        result = generate_answer(request.question)
+        logger.info(
+            "Question received (length=%d, history_turns=%d)",
+            len(request.question),
+            len(request.history),
+        )
+        result = handle_question(request.question, request.history)
+
         return AskResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

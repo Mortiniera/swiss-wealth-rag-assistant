@@ -1,4 +1,5 @@
 import { ChatWindow } from "./components/ChatWindow";
+import { DeploymentBanner } from "./components/DeploymentBanner";
 import { Footer } from "./components/Footer";
 import "./App.css";
 
@@ -9,6 +10,8 @@ function App() {
         <h1>Swiss Wealth RAG Assistant</h1>
         <p>Grounded answers over indexed Swiss wealth management documents.</p>
       </header>
+
+      <DeploymentBanner />
 
       <main>
         <ChatWindow />

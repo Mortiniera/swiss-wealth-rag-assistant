@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { askQuestion, ApiError } from "../api/client";
+import { askQuestion, ApiError, type ChatMessage } from "../api/client";
 import { MessageBubble, type Message } from "./MessageBubble";
 import { QueryInput } from "./QueryInput";
 
 function nowIso() {
     return new Date().toISOString();
+}
+
+
+function toApiHistory(messages: Message[]): ChatMessage[] {
+
+    return messages.map((message) => ({
+        role: message.role,
+        content: message.content
+    }))
 }
 
 export function ChatWindow() {
@@ -15,6 +24,8 @@ export function ChatWindow() {
     async function handleAsk(question: string) {
         setError(null);
 
+        const history = toApiHistory(messages);
+
         const userMessage: Message = {
             role: "user",
             content: question,
@@ -24,7 +35,7 @@ export function ChatWindow() {
         setLoading(true);
 
         try {
-            const data = await askQuestion(question);
+            const data = await askQuestion(question, history);
             const assistantMessage: Message = {
                 role: "assistant",
                 content: data.answer,

@@ -193,3 +193,27 @@
 .app__footer-links {
   color: #8a9a8a;
 }
+
+.deployment-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d4c48a;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #5c4a1a;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.deployment-banner__title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #7a5c10;
+}
+
+.deployment-banner p:last-child {
+  margin: 0;
+}
