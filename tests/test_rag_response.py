@@ -1,14 +1,17 @@
 from unittest.mock import patch
+from app.assistant.intent import OUT_OF_SCOPE_MESSAGE
 
 FALLBACK = "I could not find enough information in the indexed sources to answer this confidently."
 
 
-def test_unrelated_question_returns_fallback(client):
-    with patch("app.rag.generator.retrieve", return_value=[]):
+def test_out_of_scope_question_returns_refusal(client):
+    with patch("app.assistant.orchestrator.classify_intent", return_value="OUT_OF_SCOPE"), \
+         patch("app.rag.generator.retrieve") as mock_retrieve:
         response = client.post("/ask", json={"question": "What is a protein?"})
     assert response.status_code == 200
-    assert response.json()["answer"] == FALLBACK
+    assert response.json()["answer"] == OUT_OF_SCOPE_MESSAGE
     assert response.json()["sources"] == []
+    mock_retrieve.assert_not_called()
 
 
 def test_source_schema_is_valid(client):
@@ -103,3 +106,13 @@ def test_retrieval_uses_rewritten_query(client):
 
     assert response.status_code == 200
     mock_retrieve.assert_called_once_with("Compare Pictet and UBS sustainable investing")
+
+
+def test_low_relevance_rag_query_returns_fallback(client):
+    with patch("app.assistant.orchestrator.classify_intent", return_value="RAG_QUERY"), \
+         patch("app.rag.generator.retrieve", return_value=[]):
+        response = client.post("/ask", json={"question": "What is a protein?"})
+
+    assert response.status_code == 200
+    assert response.json()["answer"] == FALLBACK
+    assert response.json()["sources"] == []
