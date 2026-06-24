@@ -40,7 +40,7 @@ A React chat UI in `frontend/` sends multi-turn conversation history to `POST /a
 
 1. **Ingest** — `.txt` files from `data/documents/` are loaded, enriched with institution metadata, chunked, embedded, and stored in ChromaDB.
 2. **Classify intent** — each message is routed as `RAG_QUERY`, `ASSISTANT_META`, or `OUT_OF_SCOPE`. Meta and out-of-scope questions skip retrieval.
-3. **Rewrite (RAG only)** — follow-up questions are expanded into standalone retrieval queries using conversation history (e.g. *"And what about Pictet?"* → a full comparison question).
+3. **Rewrite (RAG + history only)** — on follow-up turns, the question is expanded into a standalone retrieval query (e.g. *"And what about Pictet?"* → a full comparison question). First questions skip this step.
 4. **Retrieve** — the rewritten query is embedded and matched against the top 3 chunks.
 5. **Generate** — if the best score is below `0.35`, the API returns a fixed fallback (no LLM call). Otherwise, the LLM answers using retrieved context and conversation history.
 6. **Respond** — the answer is returned with sources: institution, document title, file, chunk ID and relevance score.
@@ -50,28 +50,41 @@ On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) a
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Client    │────▶│   FastAPI    │────▶│  Orchestrator   │
-│  (UI/curl)  │     │   POST /ask  │     │  (assistant/)   │
-└─────────────┘     └──────────────┘     └────────┬────────┘
-                                                  │
-                    ┌─────────────────────────────┼─────────────────────────────┐
-                    ▼                             ▼                             ▼
-             ┌─────────────┐              ┌─────────────┐              ┌─────────────┐
-             │   Intent    │              │   Query     │              │  Generator  │
-             │ Classifier  │              │  Rewriter   │              │  (prompt)   │
-             └──────┬──────┘              └──────┬──────┘              └──────┬──────┘
-                    │ meta / Out-of-scope                   │ RAG only            │
-                    │ (no retrieval)                 ▼                            │
-                    │                       ┌─────────────┐     ┌──────────────┐  │
-                    │                       │  Retriever  │────▶│   ChromaDB   │  │
-                    │                       │  (top-k)    │     │ vector_store │  │
-                    │                       └─────────────┘     └──────────────┘  │
-                    │                                                             ▼
-                    └─────────────────────────────────────────────────▶ ┌─────────────┐
-                                                                        │   OpenAI    │
-                                                                        │  LLM + emb. │
-                                                                        └─────────────┘
+┌─────────┐     ┌──────────────┐     ┌──────────────┐
+│ Client  │────▶│   FastAPI    │────▶│ Orchestrator │
+│(UI/curl)│     │  POST /ask   │     │ (assistant/) │
+└─────────┘     └──────────────┘     └──────┬───────┘
+                                            │
+                                            ▼
+                                  ┌──────────────────┐
+                                  │ Intent Classifier │
+                                  └────────┬─────────┘
+                                           │
+              ┌────────────────────────────┼────────────────────────────┐
+              ▼                            ▼                            ▼
+       ASSISTANT_META                 OUT_OF_SCOPE                   RAG_QUERY
+       fixed response                 fixed response                       │
+       (no retrieval)                 (no retrieval)                     │
+                                                                           ▼
+                                                             ┌─────────────────────────┐
+                                                             │ history empty?          │
+                                                             └────────────┬────────────┘
+                                                    yes ◀────────────────┼────────────────▶ no
+                                                     │                                          │
+                                    use question as-is                               Query Rewriter
+                                                     │                                          │
+                                                     └──────────────────┬───────────────────────┘
+                                                                        ▼
+                                                                  Retriever (top-k)
+                                                                        │
+                                                                        ▼
+                                                                     ChromaDB
+                                                                        │
+                                                                        ▼
+                                                               Generator (prompt)
+                                                                        │
+                                                                        ▼
+                                                              OpenAI LLM + embeddings
 ```
 
 ## Capabilities
