@@ -42,7 +42,8 @@ def test_history_is_passed_to_prompt(client):
         "score": 0.72,
     }]
 
-    with patch("app.rag.generator.retrieve", return_value=mock_chunks), \
+    with patch("app.assistant.orchestrator.rewrite_query", return_value="How does Pictet approach sustainable investing?"), \
+        patch("app.rag.generator.retrieve", return_value=mock_chunks), \
          patch("app.rag.generator.configure_llm"), \
          patch("app.rag.generator.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "Pictet answer."
@@ -67,3 +68,38 @@ def test_history_is_passed_to_prompt(client):
     prompt = mock_settings.llm.complete.call_args[0][0]
     assert "How does UBS approach sustainable investing?" in prompt
     assert "And what about Pictet?" in prompt
+
+
+def test_retrieval_uses_rewritten_query(client):
+    mock_chunks = [{
+        "text": "Pictet sustainable finance content.",
+        "institution": "Pictet",
+        "document_title": "Sustainable Finance",
+        "source_file": "pictet_sustainable_finance.txt",
+        "chunk_id": "test-chunk-id",
+        "score": 0.72,
+    }]
+
+    with patch("app.rag.generator.retrieve") as mock_retrieve, \
+         patch("app.assistant.orchestrator.rewrite_query", return_value="Compare Pictet and UBS sustainable investing"), \
+         patch("app.rag.generator.configure_llm"), \
+         patch("app.rag.generator.LlamaSettings") as mock_settings:
+        
+        mock_retrieve.return_value = mock_chunks
+        mock_settings.llm.complete.return_value.text = "Comparison answer."
+        response = client.post("/ask", json={
+            "question": "And compared to UBS?",
+            "history": [
+                {
+                    "role": "user",
+                    "content": "How does Pictet approach sustainable investing?",
+                },
+                {
+                    "role": "assistant",
+                    "content": "Pictet focuses on thematic sustainable strategies.",
+                },
+            ],
+        })
+
+    assert response.status_code == 200
+    mock_retrieve.assert_called_once_with("Compare Pictet and UBS sustainable investing")

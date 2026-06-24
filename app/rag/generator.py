@@ -55,10 +55,17 @@ Question: {question}
 Answer:""" 
 
 
-def generate_answer(question: str, history: list[ChatMessage] | None = None) -> dict:
+def generate_answer(question: str, history: list[ChatMessage] | None = None, rewritten_query: str | None = None) -> dict:
     start = time.perf_counter()
     history = history or []
-    chunks = retrieve(question)
+    search_query = rewritten_query or question
+    chunks = retrieve(search_query)
+
+    logger.info(
+        "Rewritten query=%r (original question=%r)",
+        search_query,
+        question,
+    )
 
     # If not relevance to the asked question, no LLM call, help to prevent hallucination
     if not chunks or chunks[0]["score"] < MIN_RELEVANCE_SCORE:
