@@ -1,8 +1,8 @@
 # Swiss Wealth RAG Assistant
 
-A Retrieval-Augmented Generation API over synthetic Swiss wealth management content. The backend ingests documents, embeds them into ChromaDB, retrieves relevant passages, and generates grounded answers with structured source attribution.
+A conversational Retrieval-Augmented Generation API over synthetic Swiss wealth management content. The backend ingests documents, embeds them into ChromaDB, classifies user intent, rewrites follow-up questions for retrieval, and generates grounded answers with structured source attribution.
 
-A React chat UI in `frontend/` consumes the API for interactive Q&A. The backend is the core of the project; the UI is a thin client over `POST /ask`.
+A React chat UI in `frontend/` sends multi-turn conversation history to `POST /ask`. The backend orchestrates intent routing, query rewriting, retrieval, and generation; the UI is a thin client.
 
 ## Live demo
 
@@ -39,26 +39,50 @@ A React chat UI in `frontend/` consumes the API for interactive Q&A. The backend
 ## How it works
 
 1. **Ingest** — `.txt` files from `data/documents/` are loaded, enriched with institution metadata, chunked, embedded, and stored in ChromaDB.
-2. **Retrieve** — a user question is embedded and matched against the top 3 chunks.
-3. **Generate** — if the best score is below `0.35`, the API returns a fixed fallback (no LLM call). Otherwise, the LLM answers using retrieved context only.
-4. **Respond** — the answer is returned with sources: institution, document title, file, chunk ID, and relevance score.
+2. **Classify intent** — each message is routed as `RAG_QUERY`, `ASSISTANT_META`, or `OUT_OF_SCOPE`. Meta and out-of-scope questions skip retrieval.
+3. **Rewrite (RAG only)** — follow-up questions are expanded into standalone retrieval queries using conversation history (e.g. *"And what about Pictet?"* → a full comparison question).
+4. **Retrieve** — the rewritten query is embedded and matched against the top 3 chunks.
+5. **Generate** — if the best score is below `0.35`, the API returns a fixed fallback (no LLM call). Otherwise, the LLM answers using retrieved context and conversation history.
+6. **Respond** — the answer is returned with sources: institution, document title, file, chunk ID and relevance score.
 
 On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) and ingests if the vector store is empty.
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
-│   Client    │────▶│  FastAPI     │────▶│  Retriever  │────▶│   ChromaDB   │
-│  (UI/curl)  │     │  /ask        │     │  (top-k)    │     │ vector_store │
-└─────────────┘     └──────┬───────┘     └─────────────┘     └──────────────┘
-                           │
-                           ▼
-                    ┌──────────────┐     ┌─────────────┐
-                    │  Generator   │────▶│   OpenAI    │
-                    │  (prompt)    │     │  LLM + emb. │
-                    └──────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Client    │────▶│   FastAPI    │────▶│  Orchestrator   │
+│  (UI/curl)  │     │   POST /ask  │     │  (assistant/)   │
+└─────────────┘     └──────────────┘     └────────┬────────┘
+                                                  │
+                    ┌─────────────────────────────┼─────────────────────────────┐
+                    ▼                             ▼                             ▼
+             ┌─────────────┐              ┌─────────────┐              ┌─────────────┐
+             │   Intent    │              │   Query     │              │  Generator  │
+             │ Classifier  │              │  Rewriter   │              │  (prompt)   │
+             └──────┬──────┘              └──────┬──────┘              └──────┬──────┘
+                    │ meta / Out-of-scope                   │ RAG only            │
+                    │ (no retrieval)                 ▼                            │
+                    │                       ┌─────────────┐     ┌──────────────┐  │
+                    │                       │  Retriever  │────▶│   ChromaDB   │  │
+                    │                       │  (top-k)    │     │ vector_store │  │
+                    │                       └─────────────┘     └──────────────┘  │
+                    │                                                             ▼
+                    └─────────────────────────────────────────────────▶ ┌─────────────┐
+                                                                        │   OpenAI    │
+                                                                        │  LLM + emb. │
+                                                                        └─────────────┘
 ```
+
+## Capabilities
+
+| Feature | Description |
+| ------- | ----------- |
+| **Multi-turn conversation** | `POST /ask` accepts optional `history`, the UI sends prior turns on each message. |
+| **Query rewriting** | Follow-ups are rewritten into standalone retrieval queries before vector search. |
+| **Intent routing** | Wealth questions go to RAG, capability questions and off-topic queries get immediate responses without retrieval. |
+| **Grounded answers** | RAG responses use retrieved chunks only, low-confidence retrieval triggers a refusal instead of hallucination. |
+| **Source attribution** | Each answer includes institution, document, chunk ID and relevance score. |
 
 ## Data corpus
 
@@ -82,7 +106,13 @@ Each file is mapped to an institution and document title via `app/rag/metadata.p
 ```bash
 curl -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "How do Swiss private banks approach sustainable investing?"}'
+  -d '{
+    "question": "And what about Pictet?",
+    "history": [
+      {"role": "user", "content": "How does UBS approach sustainable investing?"},
+      {"role": "assistant", "content": "UBS integrates sustainability into advisory workflows."}
+    ]
+  }'
 ```
 
 Example response:
@@ -105,6 +135,8 @@ Example response:
 If retrieval confidence is too low:
 
 > I could not find enough information in the indexed sources to answer this confidently.
+
+**Out-of-scope questions** (e.g. sports, weather) are refused before retrieval. **Meta questions** (e.g. *"What can you do?"*) return a fixed capability description with no sources.
 
 ### Swagger UI
 
@@ -168,6 +200,10 @@ See `frontend/README.md` for frontend-specific setup.
 ```
 app/
   api/routes.py        # FastAPI endpoints
+  assistant/
+    orchestrator.py    # Pipeline: intent → rewrite → generate
+    intent.py          # Intent classification + meta/Out-of-scope responses
+    query_rewriter.py  # Follow-up → standalone retrieval query
   rag/
     ingest.py          # Load, chunk, embed, store
     retriever.py       # Vector search
@@ -191,4 +227,5 @@ vector_store/          # ChromaDB (generated, gitignored)
 - Single-node ChromaDB (no hosted vector DB)
 - English only
 - Synthetic documents only
-- No URL ingestion yet
+- No URL ingestion yet (planned)
+- Intent classification and query rewriting add extra LLM calls per RAG turn
