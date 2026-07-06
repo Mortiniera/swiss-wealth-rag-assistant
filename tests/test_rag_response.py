@@ -31,7 +31,15 @@ def test_source_schema_is_valid(client):
         response = client.post("/ask", json={"question": "Sustainable investing?"})
     assert response.status_code == 200
     source = response.json()["sources"][0]
-    assert set(source.keys()) == {"institution", "document_title", "source_file", "chunk_id", "score"}
+    assert set(source.keys()) == {
+        "institution",
+        "document_title",
+        "source_file",
+        "chunk_id",
+        "score",
+        "text",
+    }
+    assert source["text"] == "Sustainability content."
 
 
 
