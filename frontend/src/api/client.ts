@@ -4,6 +4,7 @@ export type Source = {
     source_file: string;
     chunk_id: string;
     score: number;
+    text: string;
 };
 
 export type AskResponse = {

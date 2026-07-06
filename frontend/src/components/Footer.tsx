@@ -2,9 +2,9 @@ export function Footer() {
     return (
         <footer className="app__footer">
             <p>
-                Author:{" "}
+                Built by{" "}
                 <a href="https://github.com/MORTINIERA" target="_blank" rel="noopener noreferrer">
-                    Mortiniera Thevie
+                    Thevie Mortiniera
                 </a>
             </p>
             <p className="app__footer-links">
@@ -19,8 +19,6 @@ export function Footer() {
                 >
                     LinkedIn
                 </a>
-                <span aria-hidden="true"> · </span>
-                <span>2026</span>
             </p>
         </footer>
     );

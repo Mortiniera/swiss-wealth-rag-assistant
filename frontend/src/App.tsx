@@ -7,15 +7,19 @@ function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>Swiss Wealth RAG Assistant</h1>
-        <p>Grounded answers over indexed Swiss wealth management documents.</p>
+        <p className="app__eyebrow">Swiss Wealth Intelligence</p>
+        <h1>Swiss Wealth Intelligence Assistant</h1>
+        <p className="app__subtitle">
+          RAG assistant for Swiss private banking, wealth management, sustainable investing and
+          family governance documents.
+        </p>
       </header>
-
-      <DeploymentBanner />
 
       <main>
         <ChatWindow />
       </main>
+
+      <DeploymentBanner />
 
       <Footer />
     </div>
