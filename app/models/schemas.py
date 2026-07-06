@@ -39,6 +39,7 @@ class Source(BaseModel):
     source_file: str
     chunk_id: str
     score: float
+    text: str = Field(..., description="Short excerpt from the retrieved chunk")
 
 
 class AskResponse(BaseModel):

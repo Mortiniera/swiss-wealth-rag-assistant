@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { askQuestion, ApiError, type ChatMessage } from "../api/client";
+import { ExamplePrompts } from "./ExamplePrompts";
+import { LoadingState } from "./LoadingState";
 import { MessageBubble, type Message } from "./MessageBubble";
 import { QueryInput } from "./QueryInput";
 
@@ -7,19 +9,23 @@ function nowIso() {
     return new Date().toISOString();
 }
 
-
 function toApiHistory(messages: Message[]): ChatMessage[] {
-
     return messages.map((message) => ({
         role: message.role,
-        content: message.content
-    }))
+        content: message.content,
+    }));
 }
 
 export function ChatWindow() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    function handleNewConversation() {
+        if (loading) return;
+        setMessages([]);
+        setError(null);
+    }
 
     async function handleAsk(question: string) {
         setError(null);
@@ -54,21 +60,33 @@ export function ChatWindow() {
         }
     }
 
+    const hasConversation = messages.length > 0;
+
     return (
         <div className="chat-window">
+            {hasConversation && (
+                <div className="chat-window__toolbar">
+                    <button
+                        type="button"
+                        className="chat-window__reset"
+                        onClick={handleNewConversation}
+                        disabled={loading}
+                    >
+                        New conversation
+                    </button>
+                </div>
+            )}
+
             <div className="chat-window__messages">
-                {messages.length === 0 && (
-                    <p className="chat-window__empty">
-                        Ask a question about sustainable investing, family governance, private banking, or
-                        wealth planning.
-                    </p>
+                {!hasConversation && !loading && (
+                    <ExamplePrompts onSelect={handleAsk} disabled={loading} />
                 )}
 
                 {messages.map((message, index) => (
                     <MessageBubble key={`${message.timestamp}-${index}`} message={message} />
                 ))}
 
-                {loading && <p className="chat-window__loading">Retrieving sources and generating answer...</p>}
+                {loading && <LoadingState />}
                 {error && <p className="chat-window__error">{error}</p>}
             </div>
 
