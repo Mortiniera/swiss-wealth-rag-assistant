@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import settings
 from app.database.base import Base
+import app.database.models  # noqa: F401 — register models on Base.metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
@@ -12,7 +13,6 @@ config.set_main_option("sqlalchemy.url", settings.database_url)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Models will register on Base.metadata in a later step (v0.33).
 target_metadata = Base.metadata
 
 
