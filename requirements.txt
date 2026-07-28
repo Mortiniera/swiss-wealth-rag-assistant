@@ -2,6 +2,7 @@ aiohappyeyeballs==2.6.2
 aiohttp==3.14.1
 aiosignal==1.4.0
 aiosqlite==0.22.1
+alembic==1.18.5
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
@@ -82,6 +83,8 @@ pillow==12.2.0
 platformdirs==4.10.0
 propcache==0.5.2
 protobuf==6.33.6
+psycopg==3.3.4
+psycopg-binary==3.3.4
 pybase64==1.4.3
 pydantic==2.13.4
 pydantic-settings==2.14.1
