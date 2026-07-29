@@ -21,10 +21,11 @@ class Settings(BaseSettings):
 
     auto_ingest_on_startup: bool = True
 
-    # PostgreSQL (v0.3+) — matches docker-compose defaults
     database_url: str = (
         "postgresql+psycopg://helvetia:helvetia@localhost:5432/helvetia_bank"
     )
+    # Fixed RNG seed for deterministic synthetic data
+    seed_rng_seed: int = 42
 
     @property
     def documents_path(self) -> Path:

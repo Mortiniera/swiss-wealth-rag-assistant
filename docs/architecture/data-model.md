@@ -1,6 +1,6 @@
-# Data Model (v0.3)
+# Data Model
 
-Minimum relational model for Helvetia Private Bank. Only fields required by the flagship use cases ([use-cases.md](use-cases.md)) and the fifteen curated scenarios are included. This is not a full core-banking schema.
+Minimum relational model for Helvetia Private Bank. Only fields required by the flagship use cases ([use-cases.md](use-cases.md)) and the curated scenarios are included. This is not a full core-banking schema.
 
 See also: [domain.md](domain.md).
 
@@ -12,7 +12,7 @@ See also: [domain.md](domain.md).
 | External codes | Stable string codes for demos (e.g. `CLI-000123`, `ACC-000045`) |
 | Money | `Numeric(18, 2)` + ISO currency code |
 | Timestamps | Timezone-aware UTC (`DateTime(timezone=True)`) |
-| Soft deletes | Not used in v0.3 — rows are replaced by reseed |
+| Soft deletes | Not used — rows are replaced by reseed |
 | Naming | `snake_case` tables and columns |
 
 ## Entity relationship overview
@@ -106,7 +106,7 @@ Client 1──* Restriction       (optional client-level)
 | Column | Type | Notes |
 | ------ | ---- | ----- |
 | id | UUID PK | |
-| account_id | FK → Account unique | One portfolio per account in v0.3 |
+| account_id | FK → Account unique | One portfolio per account |
 | name | String | |
 | base_currency | String | |
 | as_of | DateTime TZ | Valuation date |
@@ -234,7 +234,7 @@ Client 1──* Restriction       (optional client-level)
 
 ## Scenario registry (seed metadata)
 
-Curated scenarios are not a separate runtime table in v0.3. They are applied as **deterministic seed overrides** and will be documented in `docs/demo-scenarios/v0.3-scenarios.md` when seeding lands. Stable `client_code` / `account_code` / `transaction_code` values identify each demo case.
+Curated scenarios are not a separate runtime table. They are applied as **deterministic seed overrides**. Stable `client_code` / `account_code` / `transaction_code` values identify each demo case.
 
 ## Non-goals
 

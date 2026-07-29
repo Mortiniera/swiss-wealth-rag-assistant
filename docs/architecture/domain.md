@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the fictional institution used as the structured banking domain for the Swiss Wealth RAG Assistant from v0.3 onward. It is the business context for synthetic clients, accounts, KYC data, service requests, and operational scenarios.
+This document defines the fictional institution used as the structured banking domain for the Swiss Wealth RAG Assistant. It is the business context for synthetic clients, accounts, KYC data, service requests, and operational scenarios.
 
 ## Institution
 
@@ -21,9 +21,9 @@ Helvetia Private Bank is entirely fictional. It is not affiliated with any real 
 
 Relationship managers (RMs) and client-service employees handle day-to-day client operations: transfer reviews, KYC refresh, account restrictions, complaints, and communication preferences. Compliance staff may view cases for escalation review.
 
-The product under construction is an **internal operations assistant**, not a client-facing banking channel and not an autonomous adviser.
+The product is an **internal operations assistant**, not a client-facing banking channel and not an autonomous adviser.
 
-## User roles (v0.3)
+## User roles
 
 | Role | Description | Typical access |
 | ---- | ----------- | -------------- |
@@ -31,11 +31,11 @@ The product under construction is an **internal operations assistant**, not a cl
 | **client_service** | Handles operational tickets and escalations | Same operational reads as RM for covered clients |
 | **compliance_viewer** | Reviews KYC, restrictions, and escalations | Read-only across KYC, restrictions, and audit-relevant fields |
 
-v0.3 exposes **read-only verification APIs** without product authentication. Role semantics are documented here so later releases (v0.6) can enforce them in code.
+Verification APIs are **read-only** and do not enforce product authentication. Role semantics describe how coverage and access are meant to be interpreted in the domain.
 
-## Supported workflows (v0.3)
+## Supported workflows
 
-Structured data and APIs must support inspection of:
+Structured data and APIs support inspection of:
 
 1. Client profile and household membership
 2. Accounts, portfolios, and holdings
@@ -44,7 +44,7 @@ Structured data and APIs must support inspection of:
 5. Account restrictions
 6. Service requests and SLA state
 7. Prior interactions and communication preferences
-8. Audit events recording data access or operational notes (seeded / structural only in v0.3)
+8. Audit events recording data access or operational notes (seeded structure)
 
 The existing Chroma-based `POST /ask` document Q&A path remains available in parallel. It is not the system of record for client data.
 
@@ -55,8 +55,8 @@ The existing Chroma-based `POST /ask` document Q&A path remains available in par
 | Synthetic clients, employees, households | Real personal data or real bank records |
 | Accounts, portfolios, holdings, transactions | Trading, order management, market data feeds |
 | KYC profiles, suitability profiles | Full core-banking ledger or payment rails |
-| Service requests, interactions, restrictions | Email send / approval (v0.7) |
-| Audit event table (seeded structure) | Langfuse, MCP, agent orchestration |
+| Service requests, interactions, restrictions | Email draft, approval, or send |
+| Audit event table (seeded structure) | External observability platforms or agent orchestration |
 | Read-only HTTP APIs for verification | Write APIs that mutate banking state |
 
 ## Synthetic-data disclaimer
@@ -68,18 +68,7 @@ All names, addresses, account numbers, IBAN-like identifiers, and narrative case
 - Scenarios illustrate operational patterns (expired KYC, delayed transfer, etc.) without claiming regulatory completeness.
 - The dataset must remain regenerable from a fixed seed for reproducibility.
 
-## Relationship to later releases
-
-| Release | Domain impact |
-| ------- | ------------- |
-| **v0.3** | PostgreSQL system of record, seed, scenarios, read-only APIs |
-| **v0.4** | Fictional internal policies replace public `.txt` corpus; pgvector |
-| **v0.5** | Tool-enabled assistant over this domain |
-| **v0.6** | Permissions and governance enforced in code |
-| **v0.7** | Human-approved client communication |
-
 ## References
 
-- Flagship use cases: [use-cases.md](use-cases.md) *(next)*
-- Relational model: [data-model.md](data-model.md) *(after use cases)*
-- Roadmap: [PLAN3.md](../../PLAN3.md) §9
+- Flagship use cases: [use-cases.md](use-cases.md)
+- Relational model: [data-model.md](data-model.md)
