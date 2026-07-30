@@ -234,7 +234,7 @@ Client 1──* Restriction       (optional client-level)
 
 ## Scenario registry (seed metadata)
 
-Curated scenarios are not a separate runtime table. They are applied as **deterministic seed overrides**. Stable `client_code` / `account_code` / `transaction_code` values identify each demo case.
+Curated scenarios are not a separate runtime table. They are applied as **deterministic seed overrides**. Stable codes and case facts are listed in [../demo-scenarios/scenarios.md](../demo-scenarios/scenarios.md).
 
 ## Non-goals
 

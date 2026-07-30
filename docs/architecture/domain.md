@@ -72,3 +72,4 @@ All names, addresses, account numbers, IBAN-like identifiers, and narrative case
 
 - Flagship use cases: [use-cases.md](use-cases.md)
 - Relational model: [data-model.md](data-model.md)
+- Demo scenarios: [../demo-scenarios/scenarios.md](../demo-scenarios/scenarios.md)

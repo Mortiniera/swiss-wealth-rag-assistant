@@ -25,6 +25,7 @@ from app.database.models import (
     SuitabilityProfile,
     Transaction,
 )
+from app.database.seed_scenarios import apply_scenario_overrides
 
 TABLES_IN_DELETE_ORDER = [
     "audit_events",
@@ -80,6 +81,7 @@ ASSETS = [
 
 
 def _now_utc() -> datetime:
+    """Return the current UTC timestamp used as the seed run clock."""
     return datetime.now(timezone.utc)
 
 
@@ -393,8 +395,8 @@ def seed_database(
     """Populate synthetic domain data and return insertion counts.
 
     Expects an empty domain (call ``reset_database`` first when reseeding).
-    Insertion order: roles, employees, households, clients, assignments,
-    accounts, portfolios/holdings, transactions, client profiles, audit marker.
+    Insertion order: roles, employees, households, bulk clients, then
+    curated CLI-SCEN-* overrides.
     """
     rng = random.Random(rng_seed)
     now = _now_utc()
@@ -402,6 +404,9 @@ def seed_database(
     role_by_code = _seed_roles(session)
     employees, rms = _seed_employees(
         session, role_by_code, employee_count=employee_count
+    )
+    client_service = next(
+        e for e in employees if e.role_id == role_by_code["client_service"].id
     )
     households = _seed_households(session, household_count=household_count)
 
@@ -424,13 +429,21 @@ def seed_database(
         now=now,
     )
 
+    scenario_stats = apply_scenario_overrides(
+        session,
+        rms=rms,
+        client_service=client_service,
+        now=now,
+    )
+
     session.commit()
 
     return {
         "roles": len(role_by_code),
         "employees": len(employees),
         "households": len(households),
-        "clients": len(clients),
-        "accounts": len(accounts),
+        "clients": len(clients) + scenario_stats["scenario_clients"],
+        "accounts": len(accounts) + scenario_stats["scenario_accounts"],
         "transactions": txn_count,
+        "scenario_clients": scenario_stats["scenario_clients"],
     }
