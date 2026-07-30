@@ -11,7 +11,8 @@ class Settings(BaseSettings):
         extra='ignore'
     )
 
-    openai_api_key: str
+    # Optional at startup so read-only API routes can run without LLM usage.
+    openai_api_key: str = ""
 
     documents_dir: Path = Path("data/documents")
     vector_store_dir: Path = Path("vector_store")

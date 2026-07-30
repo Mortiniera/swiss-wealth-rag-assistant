@@ -1,4 +1,19 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: swiss-wealth-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-helvetia}:${POSTGRES_PASSWORD:-helvetia}@postgres:5432/${POSTGRES_DB:-helvetia_bank}
+      AUTO_INGEST_ON_STARTUP: "false"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     container_name: swiss-wealth-postgres
@@ -11,7 +26,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-helvetia} -d ${POSTGRES_DB:-helvetia_bank}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-helvetia} -d ${POSTGRES_DB:-helvetia_bank}" ]
       interval: 5s
       timeout: 5s
       retries: 10

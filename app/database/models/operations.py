@@ -40,6 +40,9 @@ class ServiceRequest(Base):
     )
 
     client: Mapped[Client] = relationship(back_populates="service_requests")
+    assigned_employee: Mapped[Optional[Employee]] = relationship(
+        foreign_keys=[assigned_employee_id]
+    )
     interactions: Mapped[list[Interaction]] = relationship(
         back_populates="related_service_request"
     )
@@ -66,6 +69,7 @@ class Interaction(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
 
     client: Mapped[Client] = relationship(back_populates="interactions")
+    employee: Mapped[Optional[Employee]] = relationship(foreign_keys=[employee_id])
     related_service_request: Mapped[Optional[ServiceRequest]] = relationship(
         back_populates="interactions"
     )

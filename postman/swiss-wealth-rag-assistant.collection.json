@@ -1,0 +1,236 @@
+{
+  "info": {
+    "_postman_id": "3f37889d-8b53-4709-89dc-a7864ef4a8f4",
+    "name": "Swiss Wealth RAG Assistant",
+    "description": "Starter collection for existing Swiss Wealth RAG Assistant APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Core",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Service metadata and links."
+          },
+          "response": []
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Liveness check."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RAG",
+      "item": [
+        {
+          "name": "Ingest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_dir\": \"{{sourceDir}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ingest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ingest"
+              ]
+            },
+            "description": "Run/refresh document ingestion."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"{{question}}\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ask"
+              ]
+            },
+            "description": "Ask question over indexed corpus."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients (Read-only)",
+      "item": [
+        {
+          "name": "Get Client",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientRef}}"
+              ]
+            },
+            "description": "Client profile, compliance records, and primary assignment."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientRef}}",
+                "accounts"
+              ]
+            },
+            "description": "List accounts and account-level restrictions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientRef}}",
+                "transactions"
+              ]
+            },
+            "description": "List transactions across all client accounts."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Interactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/interactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientRef}}",
+                "interactions"
+              ]
+            },
+            "description": "List client interactions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Service Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/service-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientRef}}",
+                "service-requests"
+              ]
+            },
+            "description": "List client service requests."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "sourceDir",
+      "value": "data/documents",
+      "type": "string"
+    },
+    {
+      "key": "question",
+      "value": "What are Swiss wealth management fees?",
+      "type": "string"
+    },
+    {
+      "key": "clientRef",
+      "value": "CLI-SCEN-01",
+      "type": "string"
+    }
+  ]
+}
