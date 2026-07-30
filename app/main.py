@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from app.api.routes import router
+from app.api.clients import router as clients_router
 from app.rag.ingest import ensure_index
 
 from app.config import settings
@@ -52,3 +53,4 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(clients_router)
