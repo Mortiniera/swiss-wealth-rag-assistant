@@ -48,6 +48,12 @@ Structured data and APIs support inspection of:
 
 The existing Chroma-based `POST /ask` document Q&A path remains available in parallel. It is not the system of record for client data.
 
+## Internal policy corpus
+
+Fictional internal policies and procedures live under `data/policies/` (Markdown with YAML frontmatter). Each document carries document ID, title, department, type, category, jurisdiction, allowed roles, effective date, version, status (`active` / `superseded` / `draft`), and confidentiality.
+
+Load and validate via `app.rag.policy_registry` (`load_policies`, `active_policies`). Default retrieval intent is **active** documents only. The Chroma `/ask` path still uses the public-bank files under `data/documents/`.
+
 ## Data boundaries
 
 | In scope | Out of scope |
@@ -58,6 +64,7 @@ The existing Chroma-based `POST /ask` document Q&A path remains available in par
 | Service requests, interactions, restrictions | Email draft, approval, or send |
 | Audit event table (seeded structure) | External observability platforms or agent orchestration |
 | Read-only HTTP APIs for verification | Write APIs that mutate banking state |
+| Internal policy Markdown corpus (`data/policies/`) | — |
 
 ## Synthetic-data disclaimer
 
