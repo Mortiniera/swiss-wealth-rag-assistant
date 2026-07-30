@@ -71,5 +71,7 @@ All names, addresses, account numbers, IBAN-like identifiers, and narrative case
 ## References
 
 - Flagship use cases: [use-cases.md](use-cases.md)
+- System architecture: [system.md](system.md)
 - Relational model: [data-model.md](data-model.md)
+- Database schema state: [database-schema.md](database-schema.md)
 - Demo scenarios: [../demo-scenarios/scenarios.md](../demo-scenarios/scenarios.md)
