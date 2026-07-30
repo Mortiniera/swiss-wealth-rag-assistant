@@ -95,7 +95,7 @@ HTTP request
 | Service | Image / build | Port | Role |
 | ------- | ------------- | ---- | ---- |
 | `api` | `Dockerfile` | 8000 | FastAPI + uvicorn |
-| `postgres` | `postgres:16-alpine` | 5432 | Domain system of record |
+| `postgres` | `pgvector/pgvector:pg16` | 5432 | Domain + knowledge (pgvector) |
 | `pgadmin` | `dpage/pgadmin4:8` | 5050 | DB inspection UI |
 
 API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.
@@ -106,3 +106,4 @@ API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.
 - Table and column detail: [data-model.md](data-model.md)
 - Current DB tables and relationships: [database-schema.md](database-schema.md)
 - PostgreSQL decision record: [../adr/ADR-001-postgresql.md](../adr/ADR-001-postgresql.md)
+- pgvector decision record: [../adr/ADR-002-pgvector.md](../adr/ADR-002-pgvector.md)
