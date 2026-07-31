@@ -42,3 +42,5 @@ Store knowledge document metadata and chunk embeddings in PostgreSQL using the *
 
 - Alembic revision `0002_pgvector_knowledge` enables `vector` and creates the knowledge tables
 - ORM models: `app.database.models.knowledge`
+- Policy load: `app.rag.policy_registry`
+- Policy ingest into Postgres: `scripts/ingest_policies.py` (`app.rag.policy_ingest`)

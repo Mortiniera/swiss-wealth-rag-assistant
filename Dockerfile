@@ -13,6 +13,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY app/ app/
 COPY data/ data/
+COPY scripts/ scripts/
 
 EXPOSE 8000
 

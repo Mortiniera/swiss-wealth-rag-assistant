@@ -16,7 +16,8 @@ Current PostgreSQL schema for the Helvetia structured domain and knowledge table
 | Seed entrypoint | `scripts/seed_db.py` (banking domain only) |
 
 Apply schema: `alembic upgrade head`  
-Reseed banking data: `python scripts/seed_db.py`
+Reseed banking data (Compose): `docker compose exec api python scripts/seed_db.py`  
+Ingest policies (Compose): `docker compose exec api python scripts/ingest_policies.py` (requires `OPENAI_API_KEY` in the api service env)
 
 ## Table inventory
 
@@ -38,8 +39,8 @@ Reseed banking data: `python scripts/seed_db.py`
 | `service_requests` | Operations | base seed + scenarios |
 | `interactions` | Operations | base seed + scenarios |
 | `audit_events` | Operations | seed markers |
-| `knowledge_documents` | Knowledge | empty until policy ingest |
-| `knowledge_chunks` | Knowledge | empty until policy ingest |
+| `knowledge_documents` | Knowledge | `scripts/ingest_policies.py` |
+| `knowledge_chunks` | Knowledge | `scripts/ingest_policies.py` |
 
 ## Entity relationship diagram
 
