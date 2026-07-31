@@ -1,6 +1,6 @@
 # Database Schema State
 
-**As of:** v0.4 incremental (Alembic head `0002_pgvector_knowledge`)
+**As of:** v0.4 incremental (Alembic head `0003_knowledge_fts`)
 
 Current PostgreSQL schema for the Helvetia structured domain and knowledge tables. Field-level definitions live in [data-model.md](data-model.md).
 
@@ -13,6 +13,7 @@ Current PostgreSQL schema for the Helvetia structured domain and knowledge table
 | Migrations | Alembic |
 | Baseline revision | `0001_initial_helvetia_schema` |
 | Knowledge revision | `0002_pgvector_knowledge` |
+| FTS revision | `0003_knowledge_fts` |
 | Seed entrypoint | `scripts/seed_db.py` (banking domain only) |
 
 Apply schema: `alembic upgrade head`  
@@ -111,3 +112,4 @@ Bulk synthetic clients use `CLI-000001` … `CLI-000500` (default seed count).
 - Runtime wiring: [system.md](system.md)
 - Why PostgreSQL: [../adr/ADR-001-postgresql.md](../adr/ADR-001-postgresql.md)
 - Why pgvector: [../adr/ADR-002-pgvector.md](../adr/ADR-002-pgvector.md)
+- Why hybrid retrieval: [../adr/ADR-003-hybrid-retrieval.md](../adr/ADR-003-hybrid-retrieval.md)

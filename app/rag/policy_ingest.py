@@ -73,6 +73,7 @@ def default_embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def _relative_source_path(path: Path) -> str:
+    """Return path relative to project root when possible (for stored source_path)."""
     try:
         return str(path.resolve().relative_to(PROJECT_ROOT))
     except ValueError:
@@ -80,6 +81,7 @@ def _relative_source_path(path: Path) -> str:
 
 
 def _apply_document_fields(row: KnowledgeDocument, policy: PolicyDocument) -> None:
+    """Copy policy registry metadata onto a KnowledgeDocument ORM row."""
     row.title = policy.title
     row.department = policy.department
     row.doc_type = policy.type
@@ -100,11 +102,12 @@ def ingest_policies(
     *,
     directory: Path | None = None,
     embed_fn: EmbedFn | None = None,
+    prune_missing: bool = True,
 ) -> dict:
     """Load policy files and upsert documents + embedded chunks.
 
-    Re-runs replace chunks for each document_id. Documents present in the DB but
-    missing from disk are removed.
+    Re-runs replace chunks for each document_id. When ``prune_missing`` is true,
+    documents present in the DB but missing from disk are removed.
     """
     policies = load_policies(directory or policies_dir())
     embed = embed_fn or default_embed_texts
@@ -154,13 +157,16 @@ def ingest_policies(
             )
         total_chunks += len(pieces)
 
-    stale_ids = [doc_id for doc_id in existing_rows if doc_id not in seen_ids]
-    if stale_ids:
-        session.execute(
-            delete(KnowledgeDocument).where(
-                KnowledgeDocument.document_id.in_(stale_ids)
+    removed = 0
+    if prune_missing:
+        stale_ids = [doc_id for doc_id in existing_rows if doc_id not in seen_ids]
+        if stale_ids:
+            session.execute(
+                delete(KnowledgeDocument).where(
+                    KnowledgeDocument.document_id.in_(stale_ids)
+                )
             )
-        )
+            removed = len(stale_ids)
 
     session.commit()
 
@@ -168,7 +174,7 @@ def ingest_policies(
         "status": "success",
         "documents_indexed": len(seen_ids),
         "chunks_created": total_chunks,
-        "documents_removed": len(stale_ids),
+        "documents_removed": removed,
     }
     logger.info(
         "Policy ingest complete: documents=%d chunks=%d removed=%d",

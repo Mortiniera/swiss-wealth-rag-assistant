@@ -263,6 +263,7 @@ KnowledgeDocument 1──* KnowledgeChunk
 | chunk_index | Int | Unique per document |
 | content | Text | Chunk text |
 | embedding | vector(1536) nullable | pgvector; filled by ingest |
+| content_tsv | tsvector (generated) | `to_tsvector('english', content)` for FTS; GIN indexed |
 | created_at | DateTime TZ | |
 
 ## Scenario registry (seed metadata)

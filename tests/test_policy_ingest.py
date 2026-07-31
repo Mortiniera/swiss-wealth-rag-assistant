@@ -94,17 +94,16 @@ def test_ingest_policies_upserts_into_postgres(tmp_path: Path) -> None:
 
     session = SessionLocal()
     try:
-        # Isolate from the real corpus for this test.
-        session.execute(delete(KnowledgeChunk))
-        session.execute(delete(KnowledgeDocument))
-        session.commit()
-
         result = ingest_policies(
-            session, directory=tmp_path, embed_fn=_fake_embed
+            session,
+            directory=tmp_path,
+            embed_fn=_fake_embed,
+            prune_missing=False,
         )
         assert result["status"] == "success"
         assert result["documents_indexed"] == 1
         assert result["chunks_created"] >= 1
+        assert result["documents_removed"] == 0
 
         doc = session.scalars(
             select(KnowledgeDocument).where(
@@ -124,19 +123,26 @@ def test_ingest_policies_upserts_into_postgres(tmp_path: Path) -> None:
 
         # Idempotent re-run replaces chunks rather than duplicating.
         result2 = ingest_policies(
-            session, directory=tmp_path, embed_fn=_fake_embed
+            session,
+            directory=tmp_path,
+            embed_fn=_fake_embed,
+            prune_missing=False,
         )
         assert result2["documents_indexed"] == 1
         assert result2["chunks_created"] == result["chunks_created"]
         assert (
-            session.scalar(select(func.count()).select_from(KnowledgeDocument)) == 1
-        )
-        assert (
-            session.scalar(select(func.count()).select_from(KnowledgeChunk))
+            session.scalar(
+                select(func.count())
+                .select_from(KnowledgeChunk)
+                .where(KnowledgeChunk.document_pk == doc.id)
+            )
             == result["chunks_created"]
         )
     finally:
-        session.execute(delete(KnowledgeChunk))
-        session.execute(delete(KnowledgeDocument))
+        session.execute(
+            delete(KnowledgeDocument).where(
+                KnowledgeDocument.document_id == "POL-TEST-001"
+            )
+        )
         session.commit()
         session.close()

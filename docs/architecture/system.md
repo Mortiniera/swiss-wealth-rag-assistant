@@ -107,3 +107,4 @@ API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.
 - Current DB tables and relationships: [database-schema.md](database-schema.md)
 - PostgreSQL decision record: [../adr/ADR-001-postgresql.md](../adr/ADR-001-postgresql.md)
 - pgvector decision record: [../adr/ADR-002-pgvector.md](../adr/ADR-002-pgvector.md)
+- Hybrid retrieval decision record: [../adr/ADR-003-hybrid-retrieval.md](../adr/ADR-003-hybrid-retrieval.md)

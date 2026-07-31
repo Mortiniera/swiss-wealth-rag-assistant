@@ -52,7 +52,7 @@ The existing Chroma-based `POST /ask` document Q&A path remains available in par
 
 Fictional internal policies and procedures live under `data/policies/` (Markdown with YAML frontmatter). Each document carries document ID, title, department, type, category, jurisdiction, allowed roles, effective date, version, status (`active` / `superseded` / `draft`), and confidentiality.
 
-Load and validate via `app.rag.policy_registry` (`load_policies`, `active_policies`). Default retrieval intent is **active** documents only. Populate Postgres with `docker compose exec api python scripts/ingest_policies.py` (`app.rag.policy_ingest`). The Chroma `/ask` path still uses the public-bank files under `data/documents/`.
+Load and validate via `app.rag.policy_registry` (`load_policies`, `active_policies`). Default retrieval intent is **active** documents only. Populate Postgres with `docker compose exec api python scripts/ingest_policies.py` (`app.rag.policy_ingest`). Hybrid search lives in `app.retrieval` (pgvector + FTS + RRF); the Chroma `/ask` path still uses the public-bank files under `data/documents/`.
 
 ## Data boundaries
 
