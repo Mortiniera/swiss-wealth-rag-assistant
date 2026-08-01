@@ -53,6 +53,8 @@ export function relevanceLabel(
 }
 
 export function relevanceClassName(score: number, topScore: number): string {
-    const label = relevanceLabel(score, topScore).toLowerCase();
-    return `source-card__relevance source-card__relevance--${label}`;
+    const label = relevanceLabel(score, topScore);
+    if (label === "High") return "font-semibold text-accent";
+    if (label === "Medium") return "font-semibold text-warn";
+    return "font-semibold text-ink-tertiary";
 }

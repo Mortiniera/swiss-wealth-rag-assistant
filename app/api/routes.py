@@ -1,9 +1,8 @@
-from fastapi import APIRouter, HTTPException
-import logging
-
 from app.assistant.orchestrator import handle_question
 from app.config import settings
 from app.database.session import SessionLocal
+from app.api.deps import get_optional_actor
+from app.database.models.people import Employee
 from app.models.schemas import (
     AskRequest,
     AskResponse,
@@ -12,6 +11,9 @@ from app.models.schemas import (
     RootResponse,
 )
 from app.rag.policy_ingest import ingest_policies
+
+from fastapi import APIRouter, Depends, HTTPException
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -67,14 +69,19 @@ def ingest(request: IngestRequest):
 
 
 @router.post("/ask", response_model=AskResponse)
-def ask(request: AskRequest):
+def ask(
+    request: AskRequest,
+    actor: Employee | None = Depends(get_optional_actor),
+):
     try:
         logger.info(
-            "Question received (length=%d, history_turns=%d)",
+            "Question received (length=%d, history_turns=%d, actor=%s)",
             len(request.question),
             len(request.history),
+            actor.employee_code if actor else None,
         )
-        result = handle_question(request.question, request.history)
+        role = actor.role.code if actor is not None else None
+        result = handle_question(request.question, request.history, role=role)
         return AskResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

@@ -10,7 +10,12 @@ from app.assistant.intent import (
 
 MAX_HISTORY_TURNS = 10
 
-def handle_question(question: str, history: list[ChatMessage] | None = None) -> dict: 
+def handle_question(
+    question: str,
+    history: list[ChatMessage] | None = None,
+    *,
+    role: str | None = None,
+) -> dict:
     """
     Coordinate the assistant pipeline by passing history through generation
     """
@@ -26,4 +31,9 @@ def handle_question(question: str, history: list[ChatMessage] | None = None) -> 
 
     rewritten_query = rewrite_query(question, trimmed_history)
 
-    return generate_answer(question, history=trimmed_history, rewritten_query=rewritten_query)
+    return generate_answer(
+        question,
+        history=trimmed_history,
+        rewritten_query=rewritten_query,
+        role=role,
+    )

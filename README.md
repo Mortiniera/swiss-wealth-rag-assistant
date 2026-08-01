@@ -1,29 +1,31 @@
 # Swiss Wealth RAG Assistant
 
-Internal operations assistant for fictional **Helvetia Private Bank**: grounded policy Q&A over Postgres + pgvector, plus read-only structured client APIs. The backend classifies intent, rewrites follow-ups, runs hybrid retrieval (vector + FTS), and returns answers with source attribution.
+Internal **Helvetia Private Bank** operations workspace: browse structured clients and policies, then ask a docked policy assistant grounded on Postgres + pgvector. The backend classifies intent, rewrites follow-ups, runs hybrid retrieval (vector + FTS), and returns answers with source attribution.
 
-A React chat UI in `frontend/` sends multi-turn conversation history to `POST /ask`.
+The React UI in `frontend/` is software-first (client book + policy catalog); `POST /ask` powers the assistant panel with optional selected-client context.
 
 ## Live demo
 
 | Resource | URL |
 | -------- | --- |
-| **Chat UI** | [swiss-wealth-rag-assistant.vercel.app](https://swiss-wealth-rag-assistant.vercel.app) |
+| **Operations UI** | [swiss-wealth-rag-assistant.vercel.app](https://swiss-wealth-rag-assistant.vercel.app) |
 | **API** | [swiss-wealth-rag-assistant.onrender.com](https://swiss-wealth-rag-assistant.onrender.com) |
 | **Swagger** | [swiss-wealth-rag-assistant.onrender.com/docs](https://swiss-wealth-rag-assistant.onrender.com/docs) |
 | **Health** | [swiss-wealth-rag-assistant.onrender.com/health](https://swiss-wealth-rag-assistant.onrender.com/health) |
 
 > On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). If the hosted Postgres knowledge tables are empty, the API auto-ingests Helvetia policies on startup (`AUTO_INGEST=true`, requires `OPENAI_API_KEY`). Neon data persists across restarts, so cold starts do not re-embed.
 
-### Chat UI
+### Operations UI
 
-![Chat UI — question and grounded answer](docs/assets/live-app-1.png)
+![Client directory — Act as Compliance, full book](docs/assets/ops-clients-directory.png)
 
+![Client detail — Act as RM, assigned book + docked assistant](docs/assets/ops-client-rm-detail.png)
 
-![Chat UI — answer with source attribution](docs/assets/live-app-2.png)
+![Client detail — Compliance preference, expired KYC + grounded answer](docs/assets/ops-client-compliance-kyc.png)
 
+![Client activity — transactions with selected-client assistant context](docs/assets/ops-client-transactions.png)
 
-![Chat UI — source cards with institution and score](docs/assets/live-app-3.png)
+![Policy reader — Complaint Handling Procedure](docs/assets/ops-policy-detail.png)
 
 ## Stack
 
@@ -80,10 +82,13 @@ A React chat UI in `frontend/` sends multi-turn conversation history to `POST /a
 
 | Feature | Description |
 | ------- | ----------- |
-| **Multi-turn conversation** | `POST /ask` accepts optional `history`, the UI sends prior turns on each message. |
+| **Operations workspace** | Client directory, client activity panels, and policy catalog with a docked assistant. |
+| **Demo Act-as identity** | Pick an employee (`X-Helvetia-Actor`); RM books are assigned-only; policies/`/ask` respect `allowed_roles`. Not login — full RBAC later. |
+| **Selected-client context** | Opening a client tags the assistant dock; questions are enriched for retrieval. |
+| **Multi-turn conversation** | `POST /ask` accepts optional `history`; the UI sends prior turns on each message. |
 | **Query rewriting** | Follow-ups are rewritten into standalone retrieval queries before vector search. |
-| **Intent routing** | Wealth questions go to RAG, capability questions and off-topic queries get immediate responses without retrieval. |
-| **Grounded answers** | RAG responses use retrieved chunks only, low-confidence retrieval triggers a refusal instead of hallucination. |
+| **Intent routing** | Wealth questions go to RAG; capability and off-topic queries skip retrieval. |
+| **Grounded answers** | RAG responses use retrieved chunks only; low-confidence retrieval abstains. |
 | **Source attribution** | Each answer includes department, document, chunk ID and relevance score. |
 
 ## Data corpus
@@ -100,8 +105,12 @@ Read-only structured banking data (clients, accounts, scenarios) lives in Postgr
 | ------ | --------- | ----------- |
 | GET    | `/`       | Service metadata (name, docs, health) |
 | GET    | `/health` | Health check |
+| GET    | `/actors` | Demo employees for Act-as picker |
+| GET    | `/actors/{code}/workspace` | Scope + panel layout for an actor |
+| GET    | `/clients` | Client directory (scoped when `X-Helvetia-Actor` set) |
+| GET    | `/policies` | Policy catalog (role-filtered when actor set) |
 | POST   | `/ingest` | Ingest Helvetia policies into Postgres + pgvector |
-| POST   | `/ask`    | Grounded policy Q&A with sources |
+| POST   | `/ask`    | Grounded policy Q&A with sources (role-filtered when actor set) |
 
 ### Example
 
