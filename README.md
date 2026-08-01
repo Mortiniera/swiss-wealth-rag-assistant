@@ -168,13 +168,25 @@ pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 
-### Evaluation
-
-Simple retrieval and fallback checks against a running server:
+Or via Compose (does not start by default — use the `test` profile):
 
 ```bash
+docker compose --profile test run --rm test
+```
+
+### Evaluation
+
+Helvetia policy golden set (`eval/cases.json`, ≥40 cases): hybrid **retrieval** metrics (Recall@k, MRR, active-doc / filter traps) plus a thin **`/ask`** suite (meta, out-of-scope, RAG smokes).
+
+Prerequisites: migrations applied, policies ingested, `OPENAI_API_KEY` set. For the ask suite, the API must be reachable.
+
+```bash
+# Local
 python eval/run_eval.py
-EVAL_BASE_URL=https://swiss-wealth-rag-assistant.onrender.com python eval/run_eval.py
+EVAL_SUITES=retrieval python eval/run_eval.py
+
+# Compose one-shot (api + postgres already up and ingested)
+docker compose --profile eval run --rm eval
 ```
 
 ## Docker

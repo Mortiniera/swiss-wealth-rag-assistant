@@ -45,6 +45,43 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  # One-shot QA: docker compose --profile test run --rm test
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-helvetia}:${POSTGRES_PASSWORD:-helvetia}@postgres:5432/${POSTGRES_DB:-helvetia_bank}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["pytest", "-q"]
+    restart: "no"
+
+  # One-shot eval (needs ingested policies + running API for ask suite):
+  #   docker compose up -d api postgres
+  #   docker compose exec api python scripts/ingest_policies.py
+  #   docker compose --profile eval run --rm eval
+  eval:
+    profiles: ["eval"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-helvetia}:${POSTGRES_PASSWORD:-helvetia}@postgres:5432/${POSTGRES_DB:-helvetia_bank}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      EVAL_BASE_URL: http://api:8000
+      EVAL_SUITES: ${EVAL_SUITES:-retrieval,ask}
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: ["python", "eval/run_eval.py"]
+    restart: "no"
+
 volumes:
   postgres_data:
   pgadmin_data:
