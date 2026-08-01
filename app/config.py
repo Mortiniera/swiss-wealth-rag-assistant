@@ -26,5 +26,10 @@ class Settings(BaseSettings):
     # If true, empty knowledge tables are filled from data/policies/ on API startup.
     auto_ingest: bool = True
 
+    # If true, empty banking domain (no employees) is seeded on API startup.
+    # Neon-safe: skips when employees already exist. Never truncates.
+    auto_seed: bool = True
+    auto_seed_clients: int = 500
+
 
 settings = Settings()

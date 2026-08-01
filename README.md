@@ -13,7 +13,7 @@ The React UI in `frontend/` is software-first (client book + policy catalog); `P
 | **Swagger** | [swiss-wealth-rag-assistant.onrender.com/docs](https://swiss-wealth-rag-assistant.onrender.com/docs) |
 | **Health** | [swiss-wealth-rag-assistant.onrender.com/health](https://swiss-wealth-rag-assistant.onrender.com/health) |
 
-> On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). If the hosted Postgres knowledge tables are empty, the API auto-ingests Helvetia policies on startup (`AUTO_INGEST=true`, requires `OPENAI_API_KEY`). Neon data persists across restarts, so cold starts do not re-embed.
+> On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). If the hosted Postgres knowledge tables are empty, the API auto-ingests Helvetia policies on startup (`AUTO_INGEST=true`, requires `OPENAI_API_KEY`). If the banking domain has no employees, it auto-seeds synthetic clients (`AUTO_SEED=true`). Neon data persists across restarts, so cold starts do not re-embed or reseed.
 
 ### Operations UI
 
@@ -239,7 +239,7 @@ docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 1. Connect the GitHub repo; set deploy branch to `main`
 2. Set environment variables from `.env.example` (at minimum `OPENAI_API_KEY` and `DATABASE_URL` for hosted Postgres)
 3. Use the repo `Dockerfile` (migrate on start; leave Render Docker Command empty)
-4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh
+4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh. With `AUTO_SEED=true` (default), an empty banking domain is seeded once (no Render Shell required on free tier)
 
 **Frontend (Vercel)** — deploy the `frontend/` directory. Set `VITE_API_URL` to the Render API URL. Add the Vercel origin to CORS in `app/main.py`.
 
@@ -273,4 +273,4 @@ tests/
 - English only
 - Synthetic Helvetia data only
 - Intent classification and query rewriting add extra LLM calls per RAG turn
-- Hosted demo uses managed Postgres (Neon) + Render; empty knowledge store auto-ingests on startup when `AUTO_INGEST=true`
+- Hosted demo uses managed Postgres (Neon) + Render; empty knowledge store auto-ingests and empty domain auto-seeds on startup when `AUTO_INGEST` / `AUTO_SEED` are true
