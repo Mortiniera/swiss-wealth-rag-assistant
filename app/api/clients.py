@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -20,6 +20,7 @@ from app.services.client_read import (
     list_client_interactions,
     list_client_service_requests,
     list_client_transactions,
+    list_clients,
 )
 
 router = APIRouter(prefix="/clients", tags=["clients"])
@@ -31,6 +32,19 @@ def _require_client(session: Session, client_ref: str):
     if client is None:
         raise HTTPException(status_code=404, detail="Client not found")
     return client
+
+
+@router.get("", response_model=list[ClientOut])
+def get_clients(
+    scenarios_only: bool = Query(
+        False,
+        description="When true, return only CLI-SCEN-* demo scenario clients.",
+    ),
+    session: Session = Depends(get_db),
+) -> list[ClientOut]:
+    """Return clients for the operations directory."""
+    clients = list_clients(session, scenarios_only=scenarios_only)
+    return [build_client_out(client) for client in clients]
 
 
 @router.get("/{client_ref}", response_model=ClientOut)

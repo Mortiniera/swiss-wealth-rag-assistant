@@ -1,4 +1,3 @@
-/** Compatibility barrel — prefer named imports from `./ask`, `./banking`, or `./index`. */
 export { askQuestion } from "./ask";
 export { getClient, getClientAccounts, listClients } from "./banking";
 export { ApiError } from "./errors";

@@ -14,7 +14,8 @@ React UI for the Helvetia operations workspace. Structured client/policy surface
 ## Features
 
 - Operations shell: brand chrome, left nav rail, persona control
-- Work canvas placeholders for Clients / Policies (directory wiring next)
+- Client directory from seeded clients with profile/KYC and accounts panels
+- Work canvas placeholder for Policies (catalog next)
 - Collapsible assistant dock with conversation thread and source cards
 - Error handling for API failures
 

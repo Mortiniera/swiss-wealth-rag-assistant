@@ -4,6 +4,44 @@ from uuid import uuid4
 import app.api.clients as clients_api
 
 
+def test_list_clients_scenarios_only(client, monkeypatch):
+    fake_id = uuid4()
+    monkeypatch.setattr(
+        clients_api,
+        "list_clients",
+        lambda *_args, **_kwargs: [object()],
+    )
+    monkeypatch.setattr(
+        clients_api,
+        "build_client_out",
+        lambda _: {
+            "id": str(fake_id),
+            "client_code": "CLI-SCEN-01",
+            "full_name": "Helena Vogt",
+            "email": "scen.01@clients.helvetia.example",
+            "residency_country": "CH",
+            "status": "active",
+            "segment": "hnwi",
+            "household_code": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "kyc_profile": {"status": "expired", "document_type": "passport", "document_expiry": "2024-01-01"},
+            "suitability_profile": {"status": "complete", "risk_profile": "balanced"},
+            "communication_preference": None,
+            "primary_assignment": {
+                "employee_code": "EMP-0001",
+                "full_name": "Ada RM",
+                "email": "ada@helvetia.example",
+            },
+        },
+    )
+
+    response = client.get("/clients?scenarios_only=true")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["client_code"] == "CLI-SCEN-01"
+
+
 def test_get_client_returns_profile(client, monkeypatch):
     fake_client = object()
     fake_id = uuid4()

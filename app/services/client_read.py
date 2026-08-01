@@ -30,6 +30,15 @@ from app.schemas.clients import (
 )
 
 
+_CLIENT_LOAD_OPTIONS = (
+    selectinload(Client.household),
+    selectinload(Client.kyc_profile),
+    selectinload(Client.suitability_profile),
+    selectinload(Client.communication_preference),
+    selectinload(Client.assignments).selectinload(ClientAssignment.employee),
+)
+
+
 def get_client_by_ref(session: Session, client_ref: str) -> Client | None:
     """Load a client by UUID string or stable ``client_code``."""
     try:
@@ -37,19 +46,21 @@ def get_client_by_ref(session: Session, client_ref: str) -> Client | None:
     except ValueError:
         client_id = None
 
-    stmt = select(Client).options(
-        selectinload(Client.household),
-        selectinload(Client.kyc_profile),
-        selectinload(Client.suitability_profile),
-        selectinload(Client.communication_preference),
-        selectinload(Client.assignments).selectinload(ClientAssignment.employee),
-    )
+    stmt = select(Client).options(*_CLIENT_LOAD_OPTIONS)
     if client_id is not None:
         stmt = stmt.where(Client.id == client_id)
     else:
         stmt = stmt.where(Client.client_code == client_ref)
 
     return session.scalar(stmt)
+
+
+def list_clients(session: Session, *, scenarios_only: bool = False) -> list[Client]:
+    """List clients, optionally limited to ``CLI-SCEN-*`` demo scenarios."""
+    stmt = select(Client).options(*_CLIENT_LOAD_OPTIONS).order_by(Client.client_code)
+    if scenarios_only:
+        stmt = stmt.where(Client.client_code.like("CLI-SCEN-%"))
+    return list(session.scalars(stmt).all())
 
 
 def build_client_out(client: Client) -> ClientOut:
