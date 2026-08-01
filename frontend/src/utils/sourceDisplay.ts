@@ -37,13 +37,22 @@ export function displaySourceHeading(source: Source): string {
     return `${displayInstitution(source)} — ${displayDocumentTitle(source)}`;
 }
 
-export function relevanceLabel(score: number): "High" | "Medium" | "Low" {
-    if (score >= 0.45) return "High";
-    if (score >= 0.35) return "Medium";
+/**
+ * Label relative to the strongest hit in the same answer.
+ * Hybrid RRF scores are ~0.01–0.03, so absolute Chroma thresholds no longer apply.
+ */
+export function relevanceLabel(
+    score: number,
+    topScore: number,
+): "High" | "Medium" | "Low" {
+    if (topScore <= 0 || score <= 0) return "Low";
+    const ratio = score / topScore;
+    if (ratio >= 0.9) return "High";
+    if (ratio >= 0.65) return "Medium";
     return "Low";
 }
 
-export function relevanceClassName(score: number): string {
-    const label = relevanceLabel(score).toLowerCase();
+export function relevanceClassName(score: number, topScore: number): string {
+    const label = relevanceLabel(score, topScore).toLowerCase();
     return `source-card__relevance source-card__relevance--${label}`;
 }

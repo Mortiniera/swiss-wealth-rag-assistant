@@ -39,6 +39,10 @@ function renderParagraphs(content: string, messageId: string, sourceCount = 0) {
 export function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === "user";
     const sourceCount = message.sources?.length ?? 0;
+    const topScore =
+        sourceCount > 0
+            ? Math.max(...message.sources!.map((item) => item.score))
+            : 0;
 
     return (
         <div className={`message ${isUser ? "message--user" : "message--assistant"}`}>
@@ -58,6 +62,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                                     source={source}
                                     index={index + 1}
                                     anchorId={`source-${message.timestamp}-${index + 1}`}
+                                    topScore={topScore}
                                 />
                             </li>
                         ))}

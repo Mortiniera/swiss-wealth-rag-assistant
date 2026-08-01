@@ -148,6 +148,32 @@ If retrieval returns no hits:
 
 ## Local setup
 
+**Preferred — Docker Compose (API + Postgres + frontend + pgAdmin):**
+
+```bash
+cp .env.example .env
+# Add OPENAI_API_KEY to .env
+
+docker compose up --build
+```
+
+| Service | URL |
+| ------- | --- |
+| Chat UI | http://localhost:5173 |
+| API / Swagger | http://localhost:8000/docs |
+| pgAdmin | http://localhost:5050 |
+
+On first run (or after an empty DB), seed clients and ingest policies:
+
+```bash
+docker compose exec api python scripts/seed_db.py
+docker compose exec api python scripts/ingest_policies.py
+```
+
+The API container runs `alembic upgrade head` on start. Production UI remains on Vercel; the Compose frontend is Vite **dev** for local DX only.
+
+**Alternative — Python venv (API only):**
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -159,7 +185,7 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-Prefer Docker Compose for Postgres (`docker compose up`). Apply migrations (`alembic upgrade head`), seed clients if needed (`scripts/seed_db.py`), then ingest policies (`POST /ingest` or `scripts/ingest_policies.py`) before `POST /ask`.
+Then run the UI from `frontend/` (`npm run dev`) or point Compose at an already-running API.
 
 ### Tests
 
@@ -192,6 +218,7 @@ docker compose --profile eval run --rm eval
 ## Docker
 
 ```bash
+docker compose up --build
 docker build -t swiss-wealth-rag .
 docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 ```

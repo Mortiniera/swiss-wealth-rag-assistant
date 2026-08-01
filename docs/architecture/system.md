@@ -1,6 +1,6 @@
 # System Architecture
 
-**As of:** v0.4 incremental (Chroma removed; pgvector-only knowledge path)
+**As of:** v0.4 incremental (Compose includes local frontend; pgvector-only knowledge path)
 
 How the running application is wired: HTTP entrypoints, services, and data stores.
 
@@ -20,6 +20,7 @@ flowchart TB
 
   subgraph compose [Docker Compose — local]
     API[swiss-wealth-api<br/>uvicorn :8000]
+    FE[swiss-wealth-frontend<br/>vite :5173]
     PG[(postgres:5432<br/>helvetia_bank + pgvector)]
     PgAdmin[pgadmin:5050]
   end
@@ -110,12 +111,15 @@ HTTP POST /ask
 
 | Service | Image / build | Port | Role |
 | ------- | ------------- | ---- | ---- |
-| `api` | `Dockerfile` | 8000 | FastAPI + uvicorn |
+| `api` | `Dockerfile` (migrate on start) | 8000 | FastAPI + uvicorn |
+| `frontend` | `frontend/Dockerfile` (Vite dev) | 5173 | Chat UI (local DX; prod on Vercel) |
 | `postgres` | `pgvector/pgvector:pg16` | 5432 | Domain + knowledge (pgvector) |
 | `pgadmin` | `dpage/pgadmin4:8` | 5050 | DB inspection UI |
 
 API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.  
-Ingest policies: `POST /ingest` or `docker compose exec api python scripts/ingest_policies.py`.
+Browser calls the API at `http://localhost:8000` (`VITE_API_URL`), not the Compose hostname `api`.  
+Ingest policies: `POST /ingest` or `docker compose exec api python scripts/ingest_policies.py`.  
+Seed clients: `docker compose exec api python scripts/seed_db.py`.
 
 ## Related docs
 
