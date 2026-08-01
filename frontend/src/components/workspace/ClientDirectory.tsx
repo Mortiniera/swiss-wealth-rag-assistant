@@ -1,24 +1,90 @@
 import type { Client } from "../../api/client";
-import { clientOpenItems, formatLabel } from "../../utils/clientDisplay";
-import { Badge, DataTable, EmptyState } from "../ui";
+import {
+  clientOpenItems,
+  formatLabel,
+} from "../../utils/clientDisplay";
+import type { ColumnSort } from "../../utils/tableSort";
+import { Badge, ColumnHeader, DataTable, EmptyState } from "../ui";
+import type { ClientColumnFilters } from "../../hooks/useClients";
 
-const COLUMNS = ["Client", "Relationship manager", "Risk", "Open items"] as const;
+const COLUMN_TEMPLATE =
+  "minmax(0,1.5fr) minmax(0,0.95fr) minmax(0,1.25fr) minmax(0,0.9fr) minmax(0,1fr)";
 
 type ClientDirectoryProps = {
   clients: Client[];
   loading: boolean;
   error: string | null;
   onSelect: (clientCode: string) => void;
+  sort: ColumnSort | null;
+  onSort: (key: string) => void;
+  columnFilters: ClientColumnFilters;
+  filterOptions: {
+    rm: string[];
+    risk: string[];
+    openItem: string[];
+  };
+  onColumnFilter: <K extends keyof ClientColumnFilters>(
+    key: K,
+    value: ClientColumnFilters[K],
+  ) => void;
 };
+
+function withAll(options: string[], format: (value: string) => string = (v) => v) {
+  return [
+    { value: "all", label: "All" },
+    ...options.map((value) => ({ value, label: format(value) })),
+  ];
+}
 
 export function ClientDirectory({
   clients,
   loading,
   error,
   onSelect,
+  sort,
+  onSort,
+  columnFilters,
+  filterOptions,
+  onColumnFilter,
 }: ClientDirectoryProps) {
   return (
-    <DataTable columns={COLUMNS}>
+    <DataTable
+      columnCount={5}
+      columnTemplate={COLUMN_TEMPLATE}
+      headers={
+        <>
+          <ColumnHeader label="Client" sortKey="name" sort={sort} onSort={onSort} />
+          <ColumnHeader label="Code" sortKey="code" sort={sort} onSort={onSort} />
+          <ColumnHeader
+            label="Relationship manager"
+            sortKey="rm"
+            sort={sort}
+            onSort={onSort}
+            filterValue={columnFilters.rm}
+            filterOptions={withAll(filterOptions.rm)}
+            onFilter={(value) => onColumnFilter("rm", value)}
+          />
+          <ColumnHeader
+            label="Risk"
+            sortKey="risk"
+            sort={sort}
+            onSort={onSort}
+            filterValue={columnFilters.risk}
+            filterOptions={withAll(filterOptions.risk, formatLabel)}
+            onFilter={(value) => onColumnFilter("risk", value)}
+          />
+          <ColumnHeader
+            label="Open items"
+            sortKey="openItem"
+            sort={sort}
+            onSort={onSort}
+            filterValue={columnFilters.openItem}
+            filterOptions={withAll(filterOptions.openItem)}
+            onFilter={(value) => onColumnFilter("openItem", value)}
+          />
+        </>
+      }
+    >
       {loading && (
         <p className="px-4 py-6 text-[0.875rem] text-ink-secondary">Loading clients…</p>
       )}
@@ -43,15 +109,14 @@ export function ClientDirectory({
                 <button
                   type="button"
                   onClick={() => onSelect(client.client_code)}
-                  className="grid w-full grid-cols-4 gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-muted/70"
+                  className="grid w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-muted/70"
+                  style={{ gridTemplateColumns: COLUMN_TEMPLATE }}
                 >
-                  <span className="min-w-0">
-                    <span className="block truncate text-[0.8125rem] font-semibold text-ink">
-                      {client.full_name}
-                    </span>
-                    <span className="mt-0.5 block font-mono text-[0.6875rem] text-ink-tertiary">
-                      {client.client_code}
-                    </span>
+                  <span className="min-w-0 truncate self-center text-[0.8125rem] font-semibold text-ink">
+                    {client.full_name}
+                  </span>
+                  <span className="truncate self-center font-mono text-[0.75rem] text-ink-tertiary">
+                    {client.client_code}
                   </span>
                   <span className="truncate self-center text-[0.8125rem] text-ink-secondary">
                     {client.primary_assignment?.full_name ?? "—"}

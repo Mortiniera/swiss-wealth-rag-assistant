@@ -1,4 +1,4 @@
-/** Compatibility barrel — prefer named imports from `./ask`, `./banking`, or `./index`. */
+/** Compatibility barrel — prefer named imports from `./ask`, `./banking`, `./policies`, or `./index`. */
 export { askQuestion } from "./ask";
 export {
   getClient,
@@ -8,6 +8,7 @@ export {
   getClientTransactions,
   listClients,
 } from "./banking";
+export { getPolicy, listPolicies } from "./policies";
 export { ApiError } from "./errors";
 export type {
   Account,
@@ -17,6 +18,8 @@ export type {
   CommunicationPreference,
   Interaction,
   KYCProfile,
+  PolicyDetail,
+  PolicySummary,
   PrimaryAssignment,
   Restriction,
   ServiceRequest,

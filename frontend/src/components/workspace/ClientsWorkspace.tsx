@@ -2,58 +2,15 @@ import { useState } from "react";
 import { useClientDetail } from "../../hooks/useClientDetail";
 import { useClients, type ClientListFilter } from "../../hooks/useClients";
 import { Button, ChevronLeftIcon, SearchField } from "../ui";
-import { cn } from "../../utils/cn";
 import { ClientAccountsPanel } from "./ClientAccountsPanel";
 import { ClientDirectory } from "./ClientDirectory";
 import { ClientInteractionsPanel } from "./ClientInteractionsPanel";
 import { ClientProfilePanel } from "./ClientProfilePanel";
 import { ClientServiceRequestsPanel } from "./ClientServiceRequestsPanel";
 import { ClientTransactionsPanel } from "./ClientTransactionsPanel";
+import { SegmentedControl } from "./DirectoryControls";
 import { PageHeader } from "./PageHeader";
 import { PaginationBar } from "./PaginationBar";
-
-function ListFilterControl({
-  value,
-  onChange,
-  allCount,
-  scenarioCount,
-}: {
-  value: ClientListFilter;
-  onChange: (next: ClientListFilter) => void;
-  allCount: number;
-  scenarioCount: number;
-}) {
-  const options: { id: ClientListFilter; label: string; count: number }[] = [
-    { id: "all", label: "All", count: allCount },
-    { id: "scenarios", label: "Scenarios", count: scenarioCount },
-  ];
-
-  return (
-    <div
-      className="inline-flex rounded-sm border border-border bg-surface-raised p-0.5"
-      role="group"
-      aria-label="Client list filter"
-    >
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          onClick={() => onChange(option.id)}
-          className={cn(
-            "rounded-sm px-2.5 py-1 text-[0.75rem] font-medium transition-colors",
-            value === option.id
-              ? "bg-brand text-white"
-              : "text-ink-secondary hover:bg-surface-muted hover:text-ink",
-          )}
-          aria-pressed={value === option.id}
-        >
-          {option.label}
-          <span className="ml-1 tabular-nums opacity-80">{option.count}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function ClientsWorkspace() {
   const {
@@ -61,6 +18,11 @@ export function ClientsWorkspace() {
     matchedCount,
     totalCount,
     scenarioCount,
+    filterOptions,
+    columnFilters,
+    setColumnFilter,
+    sort,
+    toggleSort,
     loading,
     error,
     query,
@@ -157,11 +119,14 @@ export function ClientsWorkspace() {
         description="Client book for service, KYC, and transfer review."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <ListFilterControl
+            <SegmentedControl<ClientListFilter>
+              aria-label="Client book scope"
               value={listFilter}
               onChange={setListFilter}
-              allCount={totalCount}
-              scenarioCount={scenarioCount}
+              options={[
+                { id: "all", label: "All", count: totalCount },
+                { id: "scenarios", label: "Scenarios", count: scenarioCount },
+              ]}
             />
             <SearchField
               placeholder="Search clients"
@@ -178,6 +143,11 @@ export function ClientsWorkspace() {
         loading={loading}
         error={error}
         onSelect={setSelectedCode}
+        sort={sort}
+        onSort={toggleSort}
+        columnFilters={columnFilters}
+        filterOptions={filterOptions}
+        onColumnFilter={setColumnFilter}
       />
 
       {!loading && !error && (

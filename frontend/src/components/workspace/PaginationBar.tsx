@@ -23,6 +23,7 @@ export function PaginationBar({
   if (total === 0) return null;
 
   const plural = total === 1 ? noun : `${noun}s`;
+  const showControls = pageCount > 1;
 
   return (
     <div
@@ -38,32 +39,34 @@ export function PaginationBar({
         <span className="tabular-nums">{total}</span> {plural}
       </p>
 
-      <div className="flex items-center gap-2">
-        <p className="m-0 text-[0.75rem] text-ink-tertiary">
-          Page <span className="tabular-nums text-ink">{page}</span> of{" "}
-          <span className="tabular-nums text-ink">{pageCount}</span>
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-          aria-label="Previous page"
-        >
-          <ChevronLeftIcon />
-          Prev
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page >= pageCount}
-          onClick={() => onPageChange(page + 1)}
-          aria-label="Next page"
-        >
-          Next
-          <ChevronRightIcon />
-        </Button>
-      </div>
+      {showControls && (
+        <div className="flex items-center gap-2">
+          <p className="m-0 text-[0.75rem] text-ink-tertiary">
+            Page <span className="tabular-nums text-ink">{page}</span> of{" "}
+            <span className="tabular-nums text-ink">{pageCount}</span>
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label="Previous page"
+          >
+            <ChevronLeftIcon />
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= pageCount}
+            onClick={() => onPageChange(page + 1)}
+            aria-label="Next page"
+          >
+            Next
+            <ChevronRightIcon />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

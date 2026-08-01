@@ -121,3 +121,25 @@ export type ServiceRequest = {
   resolved_at: string | null;
   assigned_employee_code: string | null;
 };
+
+export type PolicySummary = {
+  id: string;
+  document_id: string;
+  title: string;
+  department: string;
+  doc_type: string;
+  category: string;
+  jurisdiction: string;
+  allowed_roles: string[];
+  effective_date: string;
+  version: string;
+  status: string;
+  confidentiality: string;
+  supersedes_document_id: string | null;
+  source_path: string;
+  updated_at: string;
+};
+
+export type PolicyDetail = PolicySummary & {
+  body: string;
+};

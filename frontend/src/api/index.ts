@@ -7,6 +7,7 @@ export {
   getClientTransactions,
   listClients,
 } from "./banking";
+export { getPolicy, listPolicies } from "./policies";
 export { ApiError } from "./errors";
 export type {
   Account,
@@ -16,6 +17,8 @@ export type {
   CommunicationPreference,
   Interaction,
   KYCProfile,
+  PolicyDetail,
+  PolicySummary,
   PrimaryAssignment,
   Restriction,
   ServiceRequest,

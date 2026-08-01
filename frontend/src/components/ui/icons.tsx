@@ -48,6 +48,22 @@ export function ChevronRightIcon() {
   );
 }
 
+/** Compact funnel for column filter controls. */
+export function FilterIcon({ active = false }: { active?: boolean }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path
+        d="M2 3h8L7.2 6.4V9l-2.4 1.2V6.4L2 3Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        fill={active ? "currentColor" : "none"}
+        fillOpacity={active ? 0.18 : undefined}
+      />
+    </svg>
+  );
+}
+
 export function ClientsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">

@@ -77,13 +77,17 @@ flowchart TB
 | `POST /ingest` | `app.api.routes` | `app.rag.policy_ingest` | PostgreSQL + pgvector |
 | Policy ingest (CLI) | — | `scripts/ingest_policies.py` | PostgreSQL + pgvector |
 | `POST /ask` | `app.api.routes` | `app.assistant.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
+| `GET /clients` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/accounts` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/transactions` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/interactions` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/service-requests` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
+| `GET /policies` | `app.api.policies` | `app.services.policy_read` | PostgreSQL |
+| `GET /policies/{document_id}` | `app.api.policies` | `app.services.policy_read` | PostgreSQL |
 
 `{ref}` is a client UUID or stable `client_code` (e.g. `CLI-SCEN-01`).
+`{document_id}` is a stable policy code (e.g. `POL-KYC-001`).
 
 ## Layering (structured domain)
 

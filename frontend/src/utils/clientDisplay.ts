@@ -8,6 +8,13 @@ export function clientOpenItems(client: {
   return "—";
 }
 
+/** True when the directory should treat the client as having an open ops item. */
+export function hasClientOpenItem(client: {
+  kyc_profile: { status: string } | null;
+}): boolean {
+  return clientOpenItems(client) !== "—";
+}
+
 export function formatLabel(value: string | null | undefined): string {
   if (!value) return "—";
   const normalized = value.replaceAll("_", " ");
