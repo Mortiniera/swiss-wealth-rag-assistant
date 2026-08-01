@@ -33,6 +33,7 @@ Client 1──* Interaction
 Account 1──* Restriction
 Client 1──* Restriction       (optional client-level)
 * AuditEvent                  (polymorphic refs by entity_type + entity_id)
+KnowledgeDocument 1──* KnowledgeChunk
 ```
 
 ## Entities and fields
@@ -230,6 +231,39 @@ Client 1──* Restriction       (optional client-level)
 | entity_type | String | e.g. `client`, `account`, `transaction` |
 | entity_id | UUID nullable | |
 | payload_json | JSON | Small structured context |
+| created_at | DateTime TZ | |
+
+### KnowledgeDocument
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| id | UUID PK | |
+| document_id | String unique | Stable policy id (e.g. `POL-KYC-002`) |
+| title | String | |
+| department | String | |
+| doc_type | String | `policy` or `procedure` |
+| category | String | e.g. `kyc_refresh`, `transfer_review` |
+| jurisdiction | String | e.g. `CH` |
+| allowed_roles | String[] | Role codes permitted to retrieve |
+| effective_date | Date | |
+| version | String | |
+| status | String | `active`, `superseded`, `draft` |
+| confidentiality | String | `internal`, `confidential`, `restricted` |
+| supersedes_document_id | String nullable | Prior `document_id` when replacing a version |
+| source_path | String | Path under `data/policies/` |
+| body | Text | Full Markdown body (without frontmatter) |
+| created_at / updated_at | DateTime TZ | |
+
+### KnowledgeChunk
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| id | UUID PK | |
+| document_pk | FK → KnowledgeDocument | Cascade delete |
+| chunk_index | Int | Unique per document |
+| content | Text | Chunk text |
+| embedding | vector(1536) nullable | pgvector; filled by ingest |
+| content_tsv | tsvector (generated) | `to_tsvector('english', content)` for FTS; GIN indexed |
 | created_at | DateTime TZ | |
 
 ## Scenario registry (seed metadata)

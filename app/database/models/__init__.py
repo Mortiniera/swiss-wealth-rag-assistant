@@ -7,6 +7,7 @@ from app.database.models.compliance import (
     Restriction,
     SuitabilityProfile,
 )
+from app.database.models.knowledge import KnowledgeChunk, KnowledgeDocument
 from app.database.models.operations import AuditEvent, Interaction, ServiceRequest
 from app.database.models.people import (
     Client,
@@ -33,4 +34,6 @@ __all__ = [
     "ServiceRequest",
     "Interaction",
     "AuditEvent",
+    "KnowledgeDocument",
+    "KnowledgeChunk",
 ]

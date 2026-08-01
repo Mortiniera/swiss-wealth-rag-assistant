@@ -7,11 +7,11 @@ function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <p className="app__eyebrow">Swiss Wealth Intelligence</p>
-        <h1>Swiss Wealth Intelligence Assistant</h1>
+        <p className="app__eyebrow">Helvetia Private Bank</p>
+        <h1>Helvetia Operations Assistant</h1>
         <p className="app__subtitle">
-          RAG assistant for Swiss private banking, wealth management, sustainable investing and
-          family governance documents.
+          Internal policy Q&amp;A for Helvetia Private Bank : KYC, AML, transfers, restrictions,
+          complaints and related procedures, with grounded sources.
         </p>
       </header>
 

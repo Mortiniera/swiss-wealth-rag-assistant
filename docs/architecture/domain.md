@@ -46,7 +46,13 @@ Structured data and APIs support inspection of:
 7. Prior interactions and communication preferences
 8. Audit events recording data access or operational notes (seeded structure)
 
-The existing Chroma-based `POST /ask` document Q&A path remains available in parallel. It is not the system of record for client data.
+The product is an **internal operations assistant**, not a client-facing banking channel and not an autonomous adviser. `POST /ask` answers from Helvetia internal policies in PostgreSQL via hybrid retrieval (`app.retrieval`).
+
+## Internal policy corpus
+
+Fictional internal policies and procedures live under `data/policies/` (Markdown with YAML frontmatter). Each document carries document ID, title, department, type, category, jurisdiction, allowed roles, effective date, version, status (`active` / `superseded` / `draft`), and confidentiality.
+
+Load and validate via `app.rag.policy_registry` (`load_policies`, `active_policies`). Default retrieval intent is **active** documents only. Populate Postgres with `POST /ingest` or `docker compose exec api python scripts/ingest_policies.py` (`app.rag.policy_ingest`). `POST /ask` uses `app.retrieval` (pgvector + FTS + RRF) against that corpus.
 
 ## Data boundaries
 
@@ -58,6 +64,7 @@ The existing Chroma-based `POST /ask` document Q&A path remains available in par
 | Service requests, interactions, restrictions | Email draft, approval, or send |
 | Audit event table (seeded structure) | External observability platforms or agent orchestration |
 | Read-only HTTP APIs for verification | Write APIs that mutate banking state |
+| Internal policy Markdown corpus (`data/policies/`) | Public-bank `.txt` corpus / Chroma |
 
 ## Synthetic-data disclaimer
 

@@ -22,7 +22,7 @@ export function QueryInput({ onSubmit, disabled = false }: QueryInputProps) {
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask about Swiss wealth management..."
+                placeholder="Ask about Helvetia policies (KYC, AML, transfers…)"
                 disabled={disabled}
                 aria-label="Question"
             />
