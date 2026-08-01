@@ -1,6 +1,6 @@
-# Swiss Wealth RAG Assistant — Frontend
+# Helvetia Operations — Frontend
 
-React chat UI for the [Swiss Wealth RAG Assistant](../README.md) backend. Sends questions to `POST /ask` and displays grounded answers with source cards.
+React UI for the Helvetia operations workspace. Structured client/policy surfaces are the primary work area; the policy assistant is a docked panel that calls `POST /ask`.
 
 **Live app:** [swiss-wealth-rag-assistant.vercel.app](https://swiss-wealth-rag-assistant.vercel.app)
 
@@ -8,13 +8,14 @@ React chat UI for the [Swiss Wealth RAG Assistant](../README.md) backend. Sends 
 
 - React 19 + TypeScript
 - Vite
+- Tailwind CSS v4
 - Fetch API (no extra HTTP client)
 
 ## Features
 
-- Question input with loading state
-- Conversation thread (client-side state only)
-- Assistant messages with source cards (institution, document title, file, score)
+- Operations shell: brand chrome, left nav rail, persona control
+- Work canvas placeholders for Clients / Policies (directory wiring next)
+- Collapsible assistant dock with conversation thread and source cards
 - Error handling for API failures
 
 ## Project structure
@@ -22,12 +23,22 @@ React chat UI for the [Swiss Wealth RAG Assistant](../README.md) backend. Sends 
 ```
 src/
   api/
-    client.ts           # askQuestion(), types matching backend schemas
+    client.ts                 # askQuestion(), API types
   components/
-    ChatWindow.tsx      # Thread state, API calls
-    MessageBubble.tsx   # User / assistant message layout
-    SourceCard.tsx      # Single source attribution card
-    QueryInput.tsx      # Question form
+    ui/                       # Reusable primitives (Button, Modal, DataTable…)
+    shell/                    # App chrome (AppShell, TopBar, NavRail…)
+    workspace/                # Clients / Policies work surface
+    assistant/                # Dock, chat, rich text, sources
+  hooks/
+    useChat.ts                # Conversation state + /ask calls
+  types/
+    workspace.ts              # Persona / nav ids
+    chat.ts                   # Message model
+  utils/
+    cn.ts                     # className helper
+    paths.ts                  # path display helpers
+    richText.ts               # Pure markdown-lite parser
+    sourceDisplay.ts          # Source headings / relevance
   App.tsx
   main.tsx
 ```
