@@ -14,7 +14,7 @@ React UI for the Helvetia operations workspace. Structured client/policy surface
 ## Features
 
 - Operations shell: brand chrome, left nav rail, persona control
-- Client directory from seeded clients with profile/KYC and accounts panels
+- Client directory from seeded clients with profile/KYC, accounts, transactions, service requests, and interactions
 - Work canvas placeholder for Policies (catalog next)
 - Collapsible assistant dock with conversation thread and source cards
 - Error handling for API failures
@@ -24,7 +24,9 @@ React UI for the Helvetia operations workspace. Structured client/policy surface
 ```
 src/
   api/
-    client.ts                 # askQuestion(), API types
+    banking.ts                # /clients list + detail endpoints
+    ask.ts                    # POST /ask
+    types.ts                  # Shared API types
   components/
     ui/                       # Reusable primitives (Button, Modal, DataTable…)
     shell/                    # App chrome (AppShell, TopBar, NavRail…)
@@ -32,11 +34,14 @@ src/
     assistant/                # Dock, chat, rich text, sources
   hooks/
     useChat.ts                # Conversation state + /ask calls
+    useClients.ts             # Directory list + filter
+    useClientDetail.ts        # Profile + activity panels
   types/
     workspace.ts              # Persona / nav ids
     chat.ts                   # Message model
   utils/
     cn.ts                     # className helper
+    clientDisplay.ts          # Labels, money, status tones
     paths.ts                  # path display helpers
     richText.ts               # Pure markdown-lite parser
     sourceDisplay.ts          # Source headings / relevance

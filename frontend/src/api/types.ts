@@ -79,3 +79,45 @@ export type Account = {
   opened_at: string;
   restrictions: Restriction[];
 };
+
+export type Transaction = {
+  id: string;
+  transaction_code: string;
+  account_code: string;
+  txn_type: string;
+  amount: string;
+  currency: string;
+  status: string;
+  booked_at: string | null;
+  value_date: string | null;
+  counterparty_name: string | null;
+  description: string;
+  delay_reason_code: string | null;
+  is_unusual: boolean;
+  created_at: string;
+};
+
+export type Interaction = {
+  id: string;
+  channel: string;
+  direction: string;
+  subject: string;
+  summary: string;
+  occurred_at: string;
+  status: string;
+  employee_code: string | null;
+  related_request_code: string | null;
+};
+
+export type ServiceRequest = {
+  id: string;
+  request_code: string;
+  request_type: string;
+  status: string;
+  priority: string;
+  subject: string;
+  opened_at: string;
+  sla_due_at: string | null;
+  resolved_at: string | null;
+  assigned_employee_code: string | null;
+};

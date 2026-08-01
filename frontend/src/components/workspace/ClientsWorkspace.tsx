@@ -5,8 +5,12 @@ import { Button, ChevronLeftIcon, SearchField } from "../ui";
 import { cn } from "../../utils/cn";
 import { ClientAccountsPanel } from "./ClientAccountsPanel";
 import { ClientDirectory } from "./ClientDirectory";
+import { ClientInteractionsPanel } from "./ClientInteractionsPanel";
 import { ClientProfilePanel } from "./ClientProfilePanel";
+import { ClientServiceRequestsPanel } from "./ClientServiceRequestsPanel";
+import { ClientTransactionsPanel } from "./ClientTransactionsPanel";
 import { PageHeader } from "./PageHeader";
+import { PaginationBar } from "./PaginationBar";
 
 function ListFilterControl({
   value,
@@ -54,6 +58,7 @@ function ListFilterControl({
 export function ClientsWorkspace() {
   const {
     clients,
+    matchedCount,
     totalCount,
     scenarioCount,
     loading,
@@ -62,6 +67,11 @@ export function ClientsWorkspace() {
     setQuery,
     listFilter,
     setListFilter,
+    page,
+    setPage,
+    pageCount,
+    rangeStart,
+    rangeEnd,
   } = useClients();
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const detail = useClientDetail(selectedCode);
@@ -69,6 +79,11 @@ export function ClientsWorkspace() {
 
   function handleBack() {
     setSelectedCode(null);
+  }
+
+  function handlePageChange(next: number) {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   if (inDetail) {
@@ -119,9 +134,16 @@ export function ClientsWorkspace() {
         {detail.error && <p className="text-[0.875rem] text-danger">{detail.error}</p>}
 
         {detail.client && !detail.loading && (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ClientProfilePanel client={detail.client} />
-            <ClientAccountsPanel accounts={detail.accounts} />
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ClientProfilePanel client={detail.client} />
+              <ClientAccountsPanel accounts={detail.accounts} />
+            </div>
+            <ClientTransactionsPanel transactions={detail.transactions} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ClientServiceRequestsPanel requests={detail.serviceRequests} />
+              <ClientInteractionsPanel interactions={detail.interactions} />
+            </div>
           </div>
         )}
       </div>
@@ -159,12 +181,14 @@ export function ClientsWorkspace() {
       />
 
       {!loading && !error && (
-        <p className="text-[0.8125rem] text-ink-tertiary">
-          {clients.length} client{clients.length === 1 ? "" : "s"}
-          {listFilter === "scenarios" ? " in demo scenarios" : " in the book"}
-          {clients.length !== totalCount ? ` (filtered from ${totalCount})` : ""} ·
-          open a row for profile and accounts
-        </p>
+        <PaginationBar
+          page={page}
+          pageCount={pageCount}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={matchedCount}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

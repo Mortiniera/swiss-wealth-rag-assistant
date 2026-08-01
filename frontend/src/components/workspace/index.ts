@@ -1,6 +1,10 @@
 export { ClientAccountsPanel } from "./ClientAccountsPanel";
 export { ClientDirectory } from "./ClientDirectory";
+export { ClientInteractionsPanel } from "./ClientInteractionsPanel";
 export { ClientProfilePanel } from "./ClientProfilePanel";
+export { ClientServiceRequestsPanel } from "./ClientServiceRequestsPanel";
+export { ClientTransactionsPanel } from "./ClientTransactionsPanel";
 export { ClientsWorkspace } from "./ClientsWorkspace";
 export { PageHeader } from "./PageHeader";
+export { PaginationBar } from "./PaginationBar";
 export { WorkCanvas } from "./WorkCanvas";

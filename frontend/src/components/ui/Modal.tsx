@@ -29,7 +29,7 @@ export function Modal({ open, onClose, title, subtitle, children, wide = false }
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      className={`m-auto max-h-[min(32rem,calc(100vh-4rem))] border border-border bg-surface-raised p-0 text-ink shadow-[0_16px_48px_rgb(11_18_32_/_0.18)] open:flex open:flex-col backdrop:bg-brand-deep/35 ${wide ? "w-[min(40rem,calc(100vw-2rem))]" : "w-[min(36rem,calc(100vw-2rem))]"}`}
+      className={`m-auto max-h-[min(42rem,calc(100vh-3.5rem))] border border-border bg-surface-raised p-0 text-ink shadow-[0_16px_48px_rgb(11_18_32_/_0.18)] open:flex open:flex-col backdrop:bg-brand-deep/35 ${wide ? "w-[min(48rem,calc(100vw-2rem))]" : "w-[min(36rem,calc(100vw-2rem))]"}`}
       onClose={onClose}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
