@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     # Fixed RNG seed for deterministic synthetic data
     seed_rng_seed: int = 42
 
+    # If true, empty knowledge tables are filled from data/policies/ on API startup.
+    auto_ingest: bool = True
+
 
 settings = Settings()
