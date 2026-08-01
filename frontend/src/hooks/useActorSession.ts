@@ -40,6 +40,9 @@ export function useActorSession() {
         if (!initial) {
           setWorkspace(null);
           setApiActorCode(null);
+          setError(
+            "No demo employees in the database. Seed structured data (scripts/seed_db.py) on the API host.",
+          );
           return;
         }
         setApiActorCode(initial.employee_code);

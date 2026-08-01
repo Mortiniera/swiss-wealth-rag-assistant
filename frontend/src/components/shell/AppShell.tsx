@@ -75,7 +75,8 @@ export function AppShell() {
             workspace={workspace}
             selectedClient={selectedClient}
             onSelectedClientChange={setSelectedClient}
-            actorReady={Boolean(workspace) && !loading}
+            actorReady={Boolean(workspace)}
+            actorLoading={loading}
           />
           <div className="mt-auto pt-4">
             <DeploymentBanner />

@@ -10,6 +10,7 @@ type WorkCanvasProps = {
   selectedClient: SelectedClientContext | null;
   onSelectedClientChange: (client: SelectedClientContext | null) => void;
   actorReady: boolean;
+  actorLoading?: boolean;
 };
 
 export function WorkCanvas({
@@ -18,8 +19,9 @@ export function WorkCanvas({
   selectedClient,
   onSelectedClientChange,
   actorReady,
+  actorLoading = false,
 }: WorkCanvasProps) {
-  if (!actorReady || !workspace) {
+  if (actorLoading) {
     return (
       <section
         className="flex min-h-0 flex-1 flex-col"
@@ -27,6 +29,20 @@ export function WorkCanvas({
       >
         <p className="text-[0.875rem] text-ink-secondary">
           Loading demo operator identity…
+        </p>
+      </section>
+    );
+  }
+
+  if (!actorReady || !workspace) {
+    return (
+      <section
+        className="flex min-h-0 flex-1 flex-col"
+        aria-label="Work area"
+      >
+        <p className="text-[0.875rem] text-ink-secondary">
+          No demo operator identity available. Seed the API database, then
+          refresh.
         </p>
       </section>
     );

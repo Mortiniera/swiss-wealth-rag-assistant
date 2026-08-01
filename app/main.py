@@ -11,6 +11,8 @@ from app.api.policies import router as policies_router
 from app.api.actors import router as actors_router
 from app.config import settings
 from app.database.models.knowledge import KnowledgeDocument
+from app.database.models.people import Employee
+from app.database.seed import seed_database
 from app.database.session import SessionLocal
 from app.rag.policy_ingest import ingest_policies
 
@@ -22,6 +24,45 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
+
+
+def maybe_startup_seed() -> None:
+    """Seed synthetic banking data when the domain has no employees.
+
+    Skips when AUTO_SEED is false or employees already exist (Neon persists
+    across Render restarts — no reseed on every cold start). Never truncates.
+    """
+    if not settings.auto_seed:
+        logger.info("Startup seed skipped (AUTO_SEED=false)")
+        return
+
+    session = SessionLocal()
+    try:
+        count = session.scalar(select(func.count()).select_from(Employee)) or 0
+        if count > 0:
+            logger.info(
+                "Startup seed skipped (domain already has %d employees)",
+                count,
+            )
+            return
+        logger.info(
+            "Startup seed: empty domain, loading synthetic clients "
+            "(clients=%d, rng_seed=%d)",
+            settings.auto_seed_clients,
+            settings.seed_rng_seed,
+        )
+        stats = seed_database(
+            session,
+            rng_seed=settings.seed_rng_seed,
+            client_count=settings.auto_seed_clients,
+        )
+        logger.info("Startup seed complete: %s", stats)
+    except Exception:
+        logger.exception(
+            "Startup seed failed; API will start without structured demo data"
+        )
+    finally:
+        session.close()
 
 
 def maybe_startup_ingest() -> None:
@@ -61,6 +102,7 @@ def maybe_startup_ingest() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    maybe_startup_seed()
     maybe_startup_ingest()
     yield
 
@@ -68,7 +110,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Swiss Wealth RAG Assistant",
     description="Helvetia Private Bank internal operations assistant (policy RAG + structured client APIs)",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan
 )
 
