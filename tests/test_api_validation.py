@@ -1,7 +1,4 @@
 from unittest.mock import MagicMock, patch
-from uuid import uuid4
-
-from app.retrieval.types import RetrievalHit
 
 
 def test_ask_rejects_empty_question(client):
@@ -9,13 +6,43 @@ def test_ask_rejects_empty_question(client):
     assert response.status_code == 422
 
 
-def test_ingest_missing_folder_returns_404(client):
-    response = client.post("/ingest", json={"source_dir": "data/does_not_exist"})
-    assert response.status_code == 404
+def test_ingest_requires_openai_api_key(client, monkeypatch):
+    monkeypatch.setattr("app.api.routes.settings.openai_api_key", "")
+    response = client.post("/ingest", json={})
+    assert response.status_code == 400
+    assert "OPENAI_API_KEY" in response.json()["detail"]
+
+
+def test_ingest_policies_endpoint_success(client, monkeypatch):
+    monkeypatch.setattr("app.api.routes.settings.openai_api_key", "test-key")
+    mock_session = MagicMock()
+    with patch("app.api.routes.SessionLocal", return_value=mock_session), \
+         patch(
+             "app.api.routes.ingest_policies",
+             return_value={
+                 "status": "success",
+                 "documents_indexed": 15,
+                 "chunks_created": 15,
+                 "documents_removed": 0,
+             },
+         ) as mock_ingest:
+        response = client.post("/ingest", json={"prune_missing": True})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["documents_indexed"] == 15
+    assert body["chunks_created"] == 15
+    assert body["documents_removed"] == 0
+    mock_ingest.assert_called_once()
+    mock_session.close.assert_called_once()
 
 
 def test_ask_accepts_optional_history(client):
     """Schema accepts history; pipeline is stubbed so the test stays offline."""
+    from uuid import uuid4
+
+    from app.retrieval.types import RetrievalHit
+
     hit = RetrievalHit(
         chunk_id=uuid4(),
         document_id="POL-COM-001",

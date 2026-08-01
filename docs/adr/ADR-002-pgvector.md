@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Helvetia internal policies need versioned metadata, role filters, and vector similarity search alongside the existing structured banking domain in PostgreSQL. The application still uses ChromaDB on the filesystem for the public-bank `/ask` path, but that store cannot share transactional metadata or filters with Postgres.
+Helvetia internal policies need versioned metadata, role filters, and vector similarity search alongside the existing structured banking domain in PostgreSQL. A separate filesystem vector store cannot share transactional metadata or filters with Postgres.
 
 ## Decision
 
@@ -15,7 +15,7 @@ Store knowledge document metadata and chunk embeddings in PostgreSQL using the *
 - Local Compose uses the `pgvector/pgvector:pg16` image
 - Schema lives in `knowledge_documents` and `knowledge_chunks`
 - Embedding dimensionality is **1536** (`text-embedding-3-small`)
-- Chroma remains temporarily for the existing `/ask` path until the retrieval cutover completes
+- ChromaDB is **not** used; pgvector is the sole vector store
 
 ## Alternatives considered
 
@@ -36,11 +36,11 @@ Store knowledge document metadata and chunk embeddings in PostgreSQL using the *
 ### Trade-offs
 
 - Requires a pgvector-capable Postgres image (existing volumes must be recreated or upgraded)
-- Ingest and `/ask` cutover are separate follow-up work; tables start empty
+- Policy ingest requires an embedding API key
 
 ## Validation
 
 - Alembic revision `0002_pgvector_knowledge` enables `vector` and creates the knowledge tables
 - ORM models: `app.database.models.knowledge`
 - Policy load: `app.rag.policy_registry`
-- Policy ingest into Postgres: `scripts/ingest_policies.py` (`app.rag.policy_ingest`)
+- Policy ingest: `POST /ingest` and `scripts/ingest_policies.py` (`app.rag.policy_ingest`)

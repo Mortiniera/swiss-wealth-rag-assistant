@@ -41,8 +41,31 @@
     },
     {
       "name": "Policy Q&A (/ask)",
-      "description": "Answers use hybrid retrieval over Helvetia policies in Postgres (active documents only). Requires prior `scripts/ingest_policies.py`.",
+      "description": "Answers use hybrid retrieval over Helvetia policies in Postgres (active documents only). Ingest first via POST /ingest or scripts/ingest_policies.py.",
       "item": [
+        {
+          "name": "Ingest policies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prune_missing\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ingest",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingest"]
+            },
+            "description": "Chunk + embed data/policies into knowledge_documents / knowledge_chunks. Requires OPENAI_API_KEY on the API service."
+          },
+          "response": []
+        },
         {
           "name": "Ask — KYC refresh (expired ID)",
           "request": {
@@ -184,35 +207,6 @@
       ]
     },
     {
-      "name": "Legacy Chroma",
-      "description": "`POST /ingest` still indexes public-bank `.txt` files into Chroma. It is **not** used by `/ask` anymore. Prefer `scripts/ingest_policies.py` for Helvetia policies.",
-      "item": [
-        {
-          "name": "Ingest (legacy Chroma)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"source_dir\": \"{{sourceDir}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/ingest",
-              "host": ["{{baseUrl}}"],
-              "path": ["ingest"]
-            },
-            "description": "Legacy only. Default `sourceDir` is data/documents. Does not populate knowledge_documents / pgvector."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Clients (Read-only)",
       "description": "Structured Helvetia domain. Use scenario codes CLI-SCEN-01 … CLI-SCEN-15 after seeding.",
       "item": [
@@ -321,11 +315,6 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8000",
-      "type": "string"
-    },
-    {
-      "key": "sourceDir",
-      "value": "data/documents",
       "type": "string"
     },
     {

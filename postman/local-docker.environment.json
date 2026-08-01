@@ -8,17 +8,12 @@
       "enabled": true
     },
     {
-      "key": "sourceDir",
-      "value": "data/documents",
-      "enabled": true
-    },
-    {
       "key": "clientRef",
       "value": "CLI-SCEN-01",
       "enabled": true
     }
   ],
   "_postman_variable_scope": "environment",
-  "_postman_exported_at": "2026-07-31T16:50:00.000Z",
+  "_postman_exported_at": "2026-08-01T08:00:00.000Z",
   "_postman_exported_using": "Postman"
 }

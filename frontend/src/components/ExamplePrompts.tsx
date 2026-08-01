@@ -1,8 +1,8 @@
 const EXAMPLE_PROMPTS = [
-    "Compare UBS and Pictet on wealth management positioning",
-    "Summarize sustainable investing in Swiss banking",
-    "How Governance is conducted within wealth management?",
-    "Which sources mention private assets?",
+    "What does the KYC refresh policy require when an ID expires?",
+    "Why might an outbound transfer stay in pending review?",
+    "What should an RM do if they notice unusual fragmented transfers?",
+    "What types of account restrictions exist and who can lift them?",
 ] as const;
 
 type ExamplePromptsProps = {

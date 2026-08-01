@@ -1,6 +1,6 @@
 # System Architecture
 
-**As of:** v0.4 incremental (through hybrid `/ask` cutover)
+**As of:** v0.4 incremental (Chroma removed; pgvector-only knowledge path)
 
 How the running application is wired: HTTP entrypoints, services, and data stores.
 
@@ -34,12 +34,7 @@ flowchart TB
     Generator[app.rag.generator]
     Hybrid[app.retrieval<br/>vector + FTS + RRF]
     Policies[data/policies/]
-  end
-
-  subgraph legacy [Legacy Chroma path]
-    ChromaIngest[POST /ingest<br/>app.rag.ingest]
-    Chroma[(ChromaDB<br/>vector_store/)]
-    Docs[data/documents/]
+    PolicyIngest[POST /ingest<br/>policy_ingest]
   end
 
   subgraph domain [Structured domain]
@@ -47,7 +42,6 @@ flowchart TB
     Session[app.database.session]
     Models[app.database.models]
     Seed[scripts/seed_db.py]
-    PolicyIngest[scripts/ingest_policies.py]
   end
 
   Postman --> API
@@ -59,12 +53,9 @@ flowchart TB
   Orchestrator --> Generator
   Generator --> Hybrid
   Hybrid --> PG
-  Policies -. ingest .-> PolicyIngest
+  CoreRouter --> PolicyIngest
+  Policies --> PolicyIngest
   PolicyIngest --> PG
-
-  CoreRouter -. legacy .-> ChromaIngest
-  ChromaIngest --> Chroma
-  Docs -. legacy ingest .-> Chroma
 
   ClientsRouter --> ClientRead
   ClientRead --> Session
@@ -82,7 +73,7 @@ flowchart TB
 | Path | Router | Backend | Data store |
 | ---- | ------ | ------- | ---------- |
 | `GET /`, `GET /health` | `app.api.routes` | — | — |
-| `POST /ingest` | `app.api.routes` | `app.rag.ingest` (legacy Chroma) | ChromaDB |
+| `POST /ingest` | `app.api.routes` | `app.rag.policy_ingest` | PostgreSQL + pgvector |
 | Policy ingest (CLI) | — | `scripts/ingest_policies.py` | PostgreSQL + pgvector |
 | `POST /ask` | `app.api.routes` | `app.assistant.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
 | `GET /clients/{ref}` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
@@ -97,10 +88,10 @@ flowchart TB
 
 ```text
 HTTP request
-  → app/api/clients.py          (routing, 404)
-  → app/services/client_read.py (queries, mapping)
-  → app/schemas/clients.py      (Pydantic response shapes)
-  → app/database/models/        (SQLAlchemy ORM)
+  → app/api/clients.py
+  → app/services/client_read.py
+  → app/schemas/clients.py
+  → app/database/models/
   → PostgreSQL
 ```
 
@@ -124,7 +115,7 @@ HTTP POST /ask
 | `pgadmin` | `dpage/pgadmin4:8` | 5050 | DB inspection UI |
 
 API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.  
-Policy corpus: `docker compose exec api python scripts/ingest_policies.py`.
+Ingest policies: `POST /ingest` or `docker compose exec api python scripts/ingest_policies.py`.
 
 ## Related docs
 

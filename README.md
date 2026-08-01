@@ -1,8 +1,8 @@
 # Swiss Wealth RAG Assistant
 
-A conversational Retrieval-Augmented Generation API over synthetic Swiss wealth management content. The backend ingests documents, embeds them into ChromaDB, classifies user intent, rewrites follow-up questions for retrieval, and generates grounded answers with structured source attribution.
+Internal operations assistant for fictional **Helvetia Private Bank**: grounded policy Q&A over Postgres + pgvector, plus read-only structured client APIs. The backend classifies intent, rewrites follow-ups, runs hybrid retrieval (vector + FTS), and returns answers with source attribution.
 
-A React chat UI in `frontend/` sends multi-turn conversation history to `POST /ask`. The backend orchestrates intent routing, query rewriting, retrieval, and generation; the UI is a thin client.
+A React chat UI in `frontend/` sends multi-turn conversation history to `POST /ask`.
 
 ## Live demo
 
@@ -13,7 +13,7 @@ A React chat UI in `frontend/` sends multi-turn conversation history to `POST /a
 | **Swagger** | [swiss-wealth-rag-assistant.onrender.com/docs](https://swiss-wealth-rag-assistant.onrender.com/docs) |
 | **Health** | [swiss-wealth-rag-assistant.onrender.com/health](https://swiss-wealth-rag-assistant.onrender.com/health) |
 
-> On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). Re-run `POST /ingest` after each backend redeploy if the vector index was wiped.
+> On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). After each backend redeploy, re-run policy ingest (`POST /ingest` or `scripts/ingest_policies.py`) against hosted Postgres if knowledge tables are empty.
 
 ### Chat UI
 
@@ -30,22 +30,20 @@ A React chat UI in `frontend/` sends multi-turn conversation history to `POST /a
 | Layer | Technology |
 | ----- | ---------- |
 | API | FastAPI, Pydantic, Uvicorn |
-| RAG | LlamaIndex (load, chunk, retrieve) |
-| Vector store | ChromaDB (persistent, local filesystem) |
+| Domain DB | PostgreSQL 16 + SQLAlchemy + Alembic |
+| Knowledge / vectors | pgvector (hybrid: cosine + Postgres FTS + RRF) |
 | Embeddings | OpenAI `text-embedding-3-small` |
 | LLM | OpenAI (configurable via `LLM_MODEL`) |
 | Frontend | React, TypeScript, Vite (see `frontend/`) |
 
 ## How it works
 
-1. **Ingest** — `.txt` files from `data/documents/` are loaded, enriched with institution metadata, chunked, embedded, and stored in ChromaDB.
+1. **Ingest policies** — Markdown under `data/policies/` is validated, chunked, embedded, and stored in `knowledge_*` tables (`POST /ingest` or `scripts/ingest_policies.py`).
 2. **Classify intent** — each message is routed as `RAG_QUERY`, `ASSISTANT_META`, or `OUT_OF_SCOPE`. Meta and out-of-scope questions skip retrieval.
-3. **Rewrite (RAG + history only)** — on follow-up turns, the question is expanded into a standalone retrieval query (e.g. *"And what about Pictet?"* → a full comparison question). First questions skip this step.
-4. **Retrieve** — the rewritten query is embedded and matched against the top 3 chunks.
-5. **Generate** — if the best score is below `0.35`, the API returns a fixed fallback (no LLM call). Otherwise, the LLM answers using retrieved context and conversation history.
-6. **Respond** — the answer is returned with sources: institution, document title, file, chunk ID and relevance score.
-
-On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) and ingests if the vector store is empty.
+3. **Rewrite (RAG + history only)** — on follow-up turns, the question is expanded into a standalone retrieval query. First questions skip this step.
+4. **Retrieve** — hybrid search over active policies (pgvector + FTS, merged with RRF).
+5. **Generate** — if there are no hits, the API abstains (no LLM call). Otherwise the LLM answers from retrieved policy context and conversation history.
+6. **Respond** — the answer is returned with sources: department (in `institution`), document title, file, chunk ID, and score.
 
 ## Architecture
 
@@ -64,27 +62,18 @@ On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) a
               ▼                            ▼                            ▼
        ASSISTANT_META                 OUT_OF_SCOPE                   RAG_QUERY
        fixed response                 fixed response                       │
-       (no retrieval)                 (no retrieval)                     │
                                                                            ▼
-                                                             ┌─────────────────────────┐
-                                                             │ history empty?          │
-                                                             └────────────┬────────────┘
-                                                    yes ◀────────────────┼────────────────▶ no
-                                                     │                                          │
-                                    use question as-is                               Query Rewriter
-                                                     │                                          │
-                                                     └──────────────────┬───────────────────────┘
-                                                                        ▼
-                                                                  Retriever (top-k)
-                                                                        │
-                                                                        ▼
-                                                                     ChromaDB
-                                                                        │
-                                                                        ▼
-                                                               Generator (prompt)
-                                                                        │
-                                                                        ▼
-                                                              OpenAI LLM + embeddings
+                                                                  Query rewriter
+                                                                  (if history)
+                                                                           │
+                                                                           ▼
+                                                              app.retrieval (hybrid)
+                                                                           │
+                                                                           ▼
+                                                              PostgreSQL + pgvector
+                                                                           │
+                                                                           ▼
+                                                               Generator → OpenAI
 ```
 
 ## Capabilities
@@ -95,15 +84,15 @@ On startup, `ensure_index()` runs when `AUTO_INGEST_ON_STARTUP=true` (default) a
 | **Query rewriting** | Follow-ups are rewritten into standalone retrieval queries before vector search. |
 | **Intent routing** | Wealth questions go to RAG, capability questions and off-topic queries get immediate responses without retrieval. |
 | **Grounded answers** | RAG responses use retrieved chunks only, low-confidence retrieval triggers a refusal instead of hallucination. |
-| **Source attribution** | Each answer includes institution, document, chunk ID and relevance score. |
+| **Source attribution** | Each answer includes department, document, chunk ID and relevance score. |
 
 ## Data corpus
 
-**17 synthetic `.txt` files** in `data/documents/`, covering Lombard Odier, UBS, Pictet, and Julius Baer, plus topic documents (sustainability, family governance, digital banking, private markets, and more).
+Fictional Helvetia internal policies under `data/policies/` (Markdown + YAML frontmatter): KYC, AML, transfers, restrictions, complaints, SLAs, communication, and related procedures. Active / superseded / draft versions are supported; default retrieval uses **active** only.
 
-Each file is mapped to an institution and document title via `app/rag/metadata.py` at ingest time.
+Read-only structured banking data (clients, accounts, scenarios) lives in PostgreSQL — see `docs/architecture/`.
 
-> **Disclaimer:** These documents are synthetic demonstration content. They are not official publications of any financial institution.
+> **Disclaimer:** All content is synthetic demonstration data. It is not affiliated with any real bank or regulator.
 
 ## API
 
@@ -111,8 +100,8 @@ Each file is mapped to an institution and document title via `app/rag/metadata.p
 | ------ | --------- | ----------- |
 | GET    | `/`       | Service metadata (name, docs, health) |
 | GET    | `/health` | Health check |
-| POST   | `/ingest` | Index documents from a directory |
-| POST   | `/ask`    | Grounded Q&A with sources |
+| POST   | `/ingest` | Ingest Helvetia policies into Postgres + pgvector |
+| POST   | `/ask`    | Grounded policy Q&A with sources |
 
 ### Example
 
@@ -120,10 +109,10 @@ Each file is mapped to an institution and document title via `app/rag/metadata.p
 curl -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "And what about Pictet?",
+    "question": "And if the identity document is expired?",
     "history": [
-      {"role": "user", "content": "How does UBS approach sustainable investing?"},
-      {"role": "assistant", "content": "UBS integrates sustainability into advisory workflows."}
+      {"role": "user", "content": "What is the KYC refresh interval for elevated-risk clients?"},
+      {"role": "assistant", "content": "Elevated-risk clients must be refreshed at least every 12 months under the active KYC policy."}
     ]
   }'
 ```
@@ -132,20 +121,20 @@ Example response:
 
 ```json
 {
-  "answer": "Swiss private banks increasingly integrate sustainability into long-term investment frameworks...",
+  "answer": "If a passport is past its expiry date, activity that increases risk must be held pending refresh unless Compliance grants a time-limited exception. [1]",
   "sources": [
     {
-      "institution": "Lombard Odier",
-      "document_title": "Sustainability Transition and Long-Term Investing",
-      "source_file": "lombard_odier_sustainability_transition.txt",
+      "institution": "Compliance",
+      "document_title": "KYC Refresh Policy",
+      "source_file": "data/policies/POL-KYC-002.md",
       "chunk_id": "abc123",
-      "score": 0.82
+      "score": 0.016
     }
   ]
 }
 ```
 
-If retrieval confidence is too low:
+If retrieval returns no hits:
 
 > I could not find enough information in the indexed sources to answer this confidently.
 
@@ -170,7 +159,7 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-With `AUTO_INGEST_ON_STARTUP=true` (default), the index is built on first startup. Otherwise, call `POST /ingest` before `POST /ask`.
+Prefer Docker Compose for Postgres (`docker compose up`). Apply migrations (`alembic upgrade head`), seed clients if needed (`scripts/seed_db.py`), then ingest policies (`POST /ingest` or `scripts/ingest_policies.py`) before `POST /ask`.
 
 ### Tests
 
@@ -202,7 +191,7 @@ docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 1. Connect the GitHub repo; set deploy branch to `main`
 2. Set environment variables from `.env.example` (at minimum `OPENAI_API_KEY`)
 3. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. After redeploy, call `POST /ingest` or rely on auto-ingest when the store is empty
+4. After redeploy, call `POST /ingest` (or the CLI script) so hosted Postgres has policy embeddings
 
 **Frontend (Vercel)** — deploy the `frontend/` directory. Set `VITE_API_URL` to the Render API URL. Add the Vercel origin to CORS in `app/main.py`.
 
@@ -212,33 +201,28 @@ See `frontend/README.md` for frontend-specific setup.
 
 ```
 app/
-  api/routes.py        # FastAPI endpoints
-  assistant/
-    orchestrator.py    # Pipeline: intent → rewrite → generate
-    intent.py          # Intent classification + meta/Out-of-scope responses
-    query_rewriter.py  # Follow-up → standalone retrieval query
+  api/                 # FastAPI routes (core + clients)
+  assistant/           # Intent → rewrite → generate
+  retrieval/           # Hybrid pgvector + FTS + RRF
   rag/
-    ingest.py          # Load, chunk, embed, store
-    retriever.py       # Vector search
+    policy_registry.py # Load/validate data/policies
+    policy_ingest.py   # Chunk, embed, upsert to Postgres
     generator.py       # Grounded LLM answers
-    metadata.py        # Filename → institution, document title
-    common.py          # Shared config helpers
-  config.py            # Settings from .env
-  models/schemas.py    # Request/response models
-  main.py              # App, CORS, startup lifespan
-data/documents/        # Synthetic source corpus (17 .txt files)
-eval/                  # Evaluation script + questions
-frontend/              # React chat UI (Vite)
-docs/assets/           # Screenshots
-tests/                 # pytest suite
-vector_store/          # ChromaDB (generated, gitignored)
+    common.py          # Embedding/LLM helpers
+  database/            # SQLAlchemy models, seed
+  config.py
+  main.py
+data/policies/         # Helvetia internal policy corpus
+scripts/               # seed_db.py, ingest_policies.py
+frontend/              # React chat UI
+docs/                  # Architecture + ADRs
+tests/
 ```
 
 ## Limitations
 
 - No authentication
-- Single-node ChromaDB (no hosted vector DB)
 - English only
-- Synthetic documents only
-- No URL ingestion yet (planned)
+- Synthetic Helvetia data only
 - Intent classification and query rewriting add extra LLM calls per RAG turn
+- Hosted demo still needs a managed Postgres + policy re-ingest after wipe

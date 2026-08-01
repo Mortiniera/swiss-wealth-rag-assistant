@@ -18,7 +18,7 @@ Implement a hybrid baseline in `app/retrieval/`:
 4. Merge candidate lists with **Reciprocal Rank Fusion (RRF)** — rank-based, no score calibration
 5. Establish this baseline before adding a reranker
 
-`/ask` uses hybrid retrieval against active Helvetia policies in PostgreSQL. Chroma remains only for legacy `POST /ingest` until removed in a later slice.
+`/ask` uses hybrid retrieval against active Helvetia policies in PostgreSQL. ChromaDB has been removed from the operational path.
 
 ## Alternatives considered
 
