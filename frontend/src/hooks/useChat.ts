@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { askQuestion, ApiError, type ChatMessage } from "../api/client";
 import type { Message } from "../types/chat";
+import {
+  withClientContext,
+  type SelectedClientContext,
+} from "../utils/personaView";
 
 function nowIso() {
   return new Date().toISOString();
@@ -13,7 +17,7 @@ function toApiHistory(messages: Message[]): ChatMessage[] {
   }));
 }
 
-export function useChat() {
+export function useChat(clientContext: SelectedClientContext | null = null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +41,8 @@ export function useChat() {
     setLoading(true);
 
     try {
-      const data = await askQuestion(question, history);
+      const wireQuestion = withClientContext(question, clientContext);
+      const data = await askQuestion(wireQuestion, history);
       const assistantMessage: Message = {
         role: "assistant",
         content: data.answer,

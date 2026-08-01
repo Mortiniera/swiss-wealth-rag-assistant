@@ -21,11 +21,18 @@ def list_policies(
     session: Session,
     *,
     active_only: bool = True,
+    role: str | None = None,
 ) -> list[KnowledgeDocument]:
-    """Return policy documents ordered by document_id."""
+    """Return policy documents ordered by document_id.
+
+    When ``role`` is set, only documents that include that role in
+    ``allowed_roles`` are returned.
+    """
     stmt = select(KnowledgeDocument).order_by(KnowledgeDocument.document_id.asc())
     if active_only:
         stmt = stmt.where(KnowledgeDocument.status == "active")
+    if role is not None:
+        stmt = stmt.where(KnowledgeDocument.allowed_roles.any(role))
     return list(session.scalars(stmt).all())
 
 
@@ -36,3 +43,7 @@ def get_policy_by_document_id(
     return session.scalar(
         select(KnowledgeDocument).where(KnowledgeDocument.document_id == document_id)
     )
+
+
+def policy_allows_role(doc: KnowledgeDocument, role: str) -> bool:
+    return role in (doc.allowed_roles or [])

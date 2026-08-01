@@ -143,3 +143,31 @@ export type PolicySummary = {
 export type PolicyDetail = PolicySummary & {
   body: string;
 };
+
+export type Actor = {
+  employee_code: string;
+  full_name: string;
+  email: string;
+  role_code: string;
+  role_name: string;
+};
+
+export type ClientPanelId =
+  | "profile"
+  | "accounts"
+  | "transactions"
+  | "service_requests"
+  | "interactions";
+
+export type PanelLayout = {
+  focus_hint: string;
+  primary: ClientPanelId[];
+  secondary: ClientPanelId[];
+};
+
+export type WorkspaceContext = {
+  actor: Actor;
+  client_scope: "assigned" | "all";
+  panel_layout: PanelLayout;
+  note: string;
+};

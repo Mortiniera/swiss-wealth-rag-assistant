@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useClientDetail } from "../../hooks/useClientDetail";
 import { useClients, type ClientListFilter } from "../../hooks/useClients";
-import { Button, ChevronLeftIcon, SearchField } from "../ui";
-import { ClientAccountsPanel } from "./ClientAccountsPanel";
+import type { WorkspaceContext } from "../../api/client";
+import type { SelectedClientContext } from "../../utils/personaView";
+import { ChevronLeftIcon, SearchField } from "../ui";
+import { ClientDetailPanels } from "./ClientDetailPanels";
 import { ClientDirectory } from "./ClientDirectory";
-import { ClientInteractionsPanel } from "./ClientInteractionsPanel";
-import { ClientProfilePanel } from "./ClientProfilePanel";
-import { ClientServiceRequestsPanel } from "./ClientServiceRequestsPanel";
-import { ClientTransactionsPanel } from "./ClientTransactionsPanel";
 import { SegmentedControl } from "./DirectoryControls";
 import { PageHeader } from "./PageHeader";
 import { PaginationBar } from "./PaginationBar";
 
-export function ClientsWorkspace() {
+type ClientsWorkspaceProps = {
+  workspace: WorkspaceContext;
+  selectedClient: SelectedClientContext | null;
+  onSelectedClientChange: (client: SelectedClientContext | null) => void;
+};
+
+export function ClientsWorkspace({
+  workspace,
+  selectedClient,
+  onSelectedClientChange,
+}: ClientsWorkspaceProps) {
   const {
     clients,
     matchedCount,
@@ -34,13 +42,27 @@ export function ClientsWorkspace() {
     pageCount,
     rangeStart,
     rangeEnd,
-  } = useClients();
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  } = useClients(workspace.actor.employee_code);
+
+  const selectedCode = selectedClient?.code ?? null;
   const detail = useClientDetail(selectedCode);
   const inDetail = selectedCode !== null;
 
+  // Only refresh the display name once a client is already selected.
+  // Never re-assert selection when the user cleared it (Back) — that race
+  // used to fight handleBack while detail.client was still briefly populated.
+  useEffect(() => {
+    if (!selectedClient || !detail.client) return;
+    if (selectedClient.code !== detail.client.client_code) return;
+    if (selectedClient.name === detail.client.full_name) return;
+    onSelectedClientChange({
+      code: detail.client.client_code,
+      name: detail.client.full_name,
+    });
+  }, [detail.client, selectedClient, onSelectedClientChange]);
+
   function handleBack() {
-    setSelectedCode(null);
+    onSelectedClientChange(null);
   }
 
   function handlePageChange(next: number) {
@@ -49,7 +71,7 @@ export function ClientsWorkspace() {
   }
 
   if (inDetail) {
-    const title = detail.client?.full_name ?? selectedCode;
+    const title = detail.client?.full_name ?? selectedClient?.name ?? selectedCode;
     const code = detail.client?.client_code ?? selectedCode;
 
     return (
@@ -60,8 +82,9 @@ export function ClientsWorkspace() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="font-medium text-accent hover:underline"
+                className="inline-flex items-center gap-0.5 font-medium text-accent hover:underline"
               >
+                <ChevronLeftIcon />
                 Clients
               </button>
               <span className="text-ink-tertiary" aria-hidden="true">
@@ -69,18 +92,6 @@ export function ClientsWorkspace() {
               </span>
               <span className="font-mono text-ink-secondary">{code}</span>
             </nav>
-          }
-          leading={
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-0.5 shrink-0"
-              onClick={handleBack}
-              aria-label="Back to client directory"
-            >
-              <ChevronLeftIcon />
-              Back
-            </Button>
           }
           title={title ?? "Client"}
           description={
@@ -96,17 +107,14 @@ export function ClientsWorkspace() {
         {detail.error && <p className="text-[0.875rem] text-danger">{detail.error}</p>}
 
         {detail.client && !detail.loading && (
-          <div className="flex flex-col gap-4">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ClientProfilePanel client={detail.client} />
-              <ClientAccountsPanel accounts={detail.accounts} />
-            </div>
-            <ClientTransactionsPanel transactions={detail.transactions} />
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ClientServiceRequestsPanel requests={detail.serviceRequests} />
-              <ClientInteractionsPanel interactions={detail.interactions} />
-            </div>
-          </div>
+          <ClientDetailPanels
+            layout={workspace.panel_layout}
+            client={detail.client}
+            accounts={detail.accounts}
+            transactions={detail.transactions}
+            serviceRequests={detail.serviceRequests}
+            interactions={detail.interactions}
+          />
         )}
       </div>
     );
@@ -116,18 +124,28 @@ export function ClientsWorkspace() {
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <PageHeader
         title="Clients"
-        description="Client book for service, KYC, and transfer review."
+        description={
+          workspace.client_scope === "assigned"
+            ? "Assigned client book for this demo identity."
+            : "Full client book for this role."
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <SegmentedControl<ClientListFilter>
-              aria-label="Client book scope"
-              value={listFilter}
-              onChange={setListFilter}
-              options={[
-                { id: "all", label: "All", count: totalCount },
-                { id: "scenarios", label: "Scenarios", count: scenarioCount },
-              ]}
-            />
+            {scenarioCount > 0 ? (
+              <SegmentedControl<ClientListFilter>
+                aria-label="Client book scope"
+                value={listFilter}
+                onChange={setListFilter}
+                options={[
+                  { id: "all", label: "All", count: totalCount },
+                  { id: "scenarios", label: "Scenarios", count: scenarioCount },
+                ]}
+              />
+            ) : (
+              <p className="m-0 text-[0.75rem] tabular-nums text-ink-tertiary">
+                {totalCount} clients
+              </p>
+            )}
             <SearchField
               placeholder="Search clients"
               aria-label="Search clients"
@@ -142,7 +160,14 @@ export function ClientsWorkspace() {
         clients={clients}
         loading={loading}
         error={error}
-        onSelect={setSelectedCode}
+        showRmColumn={workspace.client_scope !== "assigned"}
+        onSelect={(clientCode) => {
+          const row = clients.find((client) => client.client_code === clientCode);
+          onSelectedClientChange({
+            code: clientCode,
+            name: row?.full_name ?? clientCode,
+          });
+        }}
         sort={sort}
         onSort={toggleSort}
         columnFilters={columnFilters}

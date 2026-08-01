@@ -1,5 +1,5 @@
-/** Compatibility barrel — prefer named imports from `./ask`, `./banking`, `./policies`, or `./index`. */
 export { askQuestion } from "./ask";
+export { getActorWorkspace, listActors } from "./actors";
 export {
   getClient,
   getClientAccounts,
@@ -10,14 +10,18 @@ export {
 } from "./banking";
 export { getPolicy, listPolicies } from "./policies";
 export { ApiError } from "./errors";
+export { setApiActorCode, getApiActorCode } from "./http";
 export type {
   Account,
+  Actor,
   AskResponse,
   ChatMessage,
   Client,
+  ClientPanelId,
   CommunicationPreference,
   Interaction,
   KYCProfile,
+  PanelLayout,
   PolicyDetail,
   PolicySummary,
   PrimaryAssignment,
@@ -26,4 +30,5 @@ export type {
   Source,
   SuitabilityProfile,
   Transaction,
+  WorkspaceContext,
 } from "./types";

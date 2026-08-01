@@ -1,4 +1,5 @@
 export { ClientAccountsPanel } from "./ClientAccountsPanel";
+export { ClientDetailPanels } from "./ClientDetailPanels";
 export { ClientDirectory } from "./ClientDirectory";
 export { ClientInteractionsPanel } from "./ClientInteractionsPanel";
 export { ClientProfilePanel } from "./ClientProfilePanel";

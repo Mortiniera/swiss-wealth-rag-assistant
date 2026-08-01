@@ -42,7 +42,7 @@ function comparePolicies(a: PolicySummary, b: PolicySummary, sort: ColumnSort): 
   }
 }
 
-export function usePolicies() {
+export function usePolicies(actorCode: string | null = null) {
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export function usePolicies() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [actorCode]);
 
   const filterOptions = useMemo(
     () => ({

@@ -1,22 +1,26 @@
 import { AskIcon, Button } from "../ui";
-import { PersonaSelect } from "./PersonaSelect";
-import type { PersonaId } from "../../types/workspace";
+import { ActorSelect } from "./ActorSelect";
+import type { Actor } from "../../api/client";
 
 type TopBarProps = {
-  persona: PersonaId;
-  onPersonaChange: (persona: PersonaId) => void;
+  actors: Actor[];
+  actorCode: string | null;
+  onActorChange: (employeeCode: string) => void;
+  actorLoading?: boolean;
   dockOpen: boolean;
   onToggleDock: () => void;
 };
 
 export function TopBar({
-  persona,
-  onPersonaChange,
+  actors,
+  actorCode,
+  onActorChange,
+  actorLoading = false,
   dockOpen,
   onToggleDock,
 }: TopBarProps) {
   return (
-    <header className="relative flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface-raised px-4 sm:pl-16">
+    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface-raised px-4 sm:pl-16">
       <div
         className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-brand"
         aria-hidden="true"
@@ -38,7 +42,12 @@ export function TopBar({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <PersonaSelect value={persona} onChange={onPersonaChange} />
+        <ActorSelect
+          actors={actors}
+          value={actorCode}
+          onChange={onActorChange}
+          disabled={actorLoading}
+        />
         <Button
           variant={dockOpen ? "soft" : "primary"}
           onClick={onToggleDock}

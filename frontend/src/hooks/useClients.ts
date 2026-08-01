@@ -72,7 +72,7 @@ function compareClients(a: Client, b: Client, sort: ColumnSort): number {
   }
 }
 
-export function useClients() {
+export function useClients(actorCode: string | null = null) {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +85,16 @@ export function useClients() {
     direction: "asc",
   });
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setListFilter("all");
+    setColumnFilters(DEFAULT_FILTERS);
+    setQuery("");
+    setPage(1);
+    setSort((prev) =>
+      prev?.key === "rm" ? { key: "name", direction: "asc" } : prev,
+    );
+  }, [actorCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +122,18 @@ export function useClients() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [actorCode]);
+
+  const scenarioCount = useMemo(
+    () => clients.filter(isScenarioClient).length,
+    [clients],
+  );
+
+  useEffect(() => {
+    if (scenarioCount === 0 && listFilter === "scenarios") {
+      setListFilter("all");
+    }
+  }, [scenarioCount, listFilter]);
 
   const scoped = useMemo(() => {
     return listFilter === "scenarios"
@@ -129,11 +150,6 @@ export function useClients() {
       ),
     }),
     [scoped],
-  );
-
-  const scenarioCount = useMemo(
-    () => clients.filter(isScenarioClient).length,
-    [clients],
   );
 
   const filtered = useMemo(() => {

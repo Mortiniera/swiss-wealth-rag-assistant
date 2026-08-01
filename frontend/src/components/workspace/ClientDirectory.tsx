@@ -7,8 +7,11 @@ import type { ColumnSort } from "../../utils/tableSort";
 import { Badge, ColumnHeader, DataTable, EmptyState } from "../ui";
 import type { ClientColumnFilters } from "../../hooks/useClients";
 
-const COLUMN_TEMPLATE =
+const COLUMN_TEMPLATE_FULL =
   "minmax(0,1.5fr) minmax(0,0.95fr) minmax(0,1.25fr) minmax(0,0.9fr) minmax(0,1fr)";
+
+const COLUMN_TEMPLATE_NO_RM =
+  "minmax(0,1.6fr) minmax(0,1fr) minmax(0,0.9fr) minmax(0,1.1fr)";
 
 type ClientDirectoryProps = {
   clients: Client[];
@@ -27,6 +30,8 @@ type ClientDirectoryProps = {
     key: K,
     value: ClientColumnFilters[K],
   ) => void;
+  /** Hide RM column when the book is already assigned-scoped. */
+  showRmColumn?: boolean;
 };
 
 function withAll(options: string[], format: (value: string) => string = (v) => v) {
@@ -46,24 +51,30 @@ export function ClientDirectory({
   columnFilters,
   filterOptions,
   onColumnFilter,
+  showRmColumn = true,
 }: ClientDirectoryProps) {
+  const columnTemplate = showRmColumn ? COLUMN_TEMPLATE_FULL : COLUMN_TEMPLATE_NO_RM;
+  const columnCount = showRmColumn ? 5 : 4;
+
   return (
     <DataTable
-      columnCount={5}
-      columnTemplate={COLUMN_TEMPLATE}
+      columnCount={columnCount}
+      columnTemplate={columnTemplate}
       headers={
         <>
           <ColumnHeader label="Client" sortKey="name" sort={sort} onSort={onSort} />
           <ColumnHeader label="Code" sortKey="code" sort={sort} onSort={onSort} />
-          <ColumnHeader
-            label="Relationship manager"
-            sortKey="rm"
-            sort={sort}
-            onSort={onSort}
-            filterValue={columnFilters.rm}
-            filterOptions={withAll(filterOptions.rm)}
-            onFilter={(value) => onColumnFilter("rm", value)}
-          />
+          {showRmColumn && (
+            <ColumnHeader
+              label="Relationship manager"
+              sortKey="rm"
+              sort={sort}
+              onSort={onSort}
+              filterValue={columnFilters.rm}
+              filterOptions={withAll(filterOptions.rm)}
+              onFilter={(value) => onColumnFilter("rm", value)}
+            />
+          )}
           <ColumnHeader
             label="Risk"
             sortKey="risk"
@@ -110,7 +121,7 @@ export function ClientDirectory({
                   type="button"
                   onClick={() => onSelect(client.client_code)}
                   className="grid w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-muted/70"
-                  style={{ gridTemplateColumns: COLUMN_TEMPLATE }}
+                  style={{ gridTemplateColumns: columnTemplate }}
                 >
                   <span className="min-w-0 truncate self-center text-[0.8125rem] font-semibold text-ink">
                     {client.full_name}
@@ -118,9 +129,11 @@ export function ClientDirectory({
                   <span className="truncate self-center font-mono text-[0.75rem] text-ink-tertiary">
                     {client.client_code}
                   </span>
-                  <span className="truncate self-center text-[0.8125rem] text-ink-secondary">
-                    {client.primary_assignment?.full_name ?? "—"}
-                  </span>
+                  {showRmColumn && (
+                    <span className="truncate self-center text-[0.8125rem] text-ink-secondary">
+                      {client.primary_assignment?.full_name ?? "—"}
+                    </span>
+                  )}
                   <span className="truncate self-center text-[0.8125rem] capitalize text-ink-secondary">
                     {formatLabel(client.suitability_profile?.risk_profile)}
                   </span>

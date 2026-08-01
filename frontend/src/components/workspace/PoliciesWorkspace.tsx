@@ -2,13 +2,17 @@ import { useState } from "react";
 import { usePolicies } from "../../hooks/usePolicies";
 import { usePolicyDetail } from "../../hooks/usePolicyDetail";
 import { formatDate, formatLabel } from "../../utils/clientDisplay";
-import { Button, ChevronLeftIcon, SearchField } from "../ui";
+import { ChevronLeftIcon, SearchField } from "../ui";
 import { PageHeader } from "./PageHeader";
 import { PaginationBar } from "./PaginationBar";
 import { PolicyDetailPanel } from "./PolicyDetailPanel";
 import { PolicyDirectory } from "./PolicyDirectory";
 
-export function PoliciesWorkspace() {
+type PoliciesWorkspaceProps = {
+  actorCode: string;
+};
+
+export function PoliciesWorkspace({ actorCode }: PoliciesWorkspaceProps) {
   const {
     policies,
     matchedCount,
@@ -26,7 +30,7 @@ export function PoliciesWorkspace() {
     pageCount,
     rangeStart,
     rangeEnd,
-  } = usePolicies();
+  } = usePolicies(actorCode);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detail = usePolicyDetail(selectedId);
   const inDetail = selectedId !== null;
@@ -52,8 +56,9 @@ export function PoliciesWorkspace() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="font-medium text-accent hover:underline"
+                className="inline-flex items-center gap-0.5 font-medium text-accent hover:underline"
               >
+                <ChevronLeftIcon />
                 Policies
               </button>
               <span className="text-ink-tertiary" aria-hidden="true">
@@ -61,18 +66,6 @@ export function PoliciesWorkspace() {
               </span>
               <span className="font-mono text-ink-secondary">{code}</span>
             </nav>
-          }
-          leading={
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-0.5 shrink-0"
-              onClick={handleBack}
-              aria-label="Back to policy catalog"
-            >
-              <ChevronLeftIcon />
-              Back
-            </Button>
           }
           title={title ?? "Policy"}
           description={

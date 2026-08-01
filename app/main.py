@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from app.api.routes import router
 from app.api.clients import router as clients_router
 from app.api.policies import router as policies_router
+from app.api.actors import router as actors_router
 from app.config import settings
 from app.database.models.knowledge import KnowledgeDocument
 from app.database.session import SessionLocal
@@ -86,3 +87,4 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(clients_router)
 app.include_router(policies_router)
+app.include_router(actors_router)

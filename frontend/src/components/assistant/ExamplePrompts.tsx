@@ -1,23 +1,25 @@
-const EXAMPLE_PROMPTS = [
-  "What does KYC refresh require when an ID expires?",
-  "Why might an outbound transfer stay in pending review?",
-  "What should an RM do about fragmented transfers?",
-  "Which account restrictions exist, and who can lift them?",
-] as const;
+import { clientAwarePrompts, type SelectedClientContext } from "../../utils/personaView";
 
 type ExamplePromptsProps = {
   onSelect: (prompt: string) => void;
   disabled?: boolean;
+  clientContext?: SelectedClientContext | null;
 };
 
-export function ExamplePrompts({ onSelect, disabled = false }: ExamplePromptsProps) {
+export function ExamplePrompts({
+  onSelect,
+  disabled = false,
+  clientContext = null,
+}: ExamplePromptsProps) {
+  const prompts = clientAwarePrompts(clientContext);
+
   return (
     <div className="px-2 py-3">
       <p className="mb-2 text-[0.75rem] font-semibold tracking-[0.04em] text-ink-tertiary uppercase">
         Try asking
       </p>
       <ul className="m-0 flex list-none flex-col gap-px p-0">
-        {EXAMPLE_PROMPTS.map((prompt) => (
+        {prompts.map((prompt) => (
           <li key={prompt}>
             <button
               type="button"
