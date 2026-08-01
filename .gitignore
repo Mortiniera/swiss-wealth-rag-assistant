@@ -156,6 +156,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# Local-only notes (plans, setup cheatsheets, scratch) — keep working tree clean for commits
+local_setup/
+.cursor/
 
 # Spyder project settings
 .spyderproject
@@ -217,5 +220,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-#vector store
-vector_store/*
+# Local generated artifacts
+vector_store/

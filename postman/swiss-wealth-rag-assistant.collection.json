@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "3f37889d-8b53-4709-89dc-a7864ef4a8f4",
+    "name": "Swiss Wealth RAG Assistant",
+    "description": "Local Docker Compose APIs for Helvetia Private Bank.\n\n**Before policy `/ask`:** run migrations, then ingest policies inside the API container:\n`docker compose exec api python scripts/ingest_policies.py`\n\n**Before client routes:** seed the domain DB:\n`docker compose exec api python scripts/seed_db.py`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Core",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Service metadata and links."
+          },
+          "response": []
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness check."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Policy Q&A (/ask)",
+      "description": "Answers use hybrid retrieval over Helvetia policies in Postgres (active documents only). Ingest first via POST /ingest or scripts/ingest_policies.py.",
+      "item": [
+        {
+          "name": "Ingest policies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prune_missing\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ingest",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingest"]
+            },
+            "description": "Chunk + embed data/policies into knowledge_documents / knowledge_chunks. Requires OPENAI_API_KEY on the API service."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — KYC refresh (expired ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"A client's passport has expired and a transfer is pending. What does the KYC refresh policy require?\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Expect grounded answer citing active KYC policy (POL-KYC-002), not the superseded POL-KYC-001. Sources.institution is the policy department."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — Transfer delayed / review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Why might an outbound client transfer stay in pending review, and what should the RM do?\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Expect transfer-review procedure (POL-TRF-001) and related holds (KYC / restrictions)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — Account restriction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What types of account restrictions exist and who can lift them?\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Expect account restrictions policy (POL-RST-001)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — AML escalation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What should an RM do if they notice unusual fragmented transfers that look like structuring?\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Expect AML escalation procedure (POL-AML-001). Tip-off rules should appear in the answer."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — with conversation history",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"And if the identity document is expired?\",\n  \"history\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"What is the KYC refresh interval for elevated-risk clients?\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"Elevated-risk clients must be refreshed at least every 12 months under the active KYC policy.\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Follow-up turn; query rewriter should resolve 'And if…' using history."
+          },
+          "response": []
+        },
+        {
+          "name": "Ask — abstain (no policy evidence)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What is the chemical formula of caffeine?\",\n  \"history\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["ask"]
+            },
+            "description": "Out-of-scope or empty retrieval should refuse / abstain without inventing policy. Expect insufficient-info or out-of-scope message and empty sources."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients (Read-only)",
+      "description": "Structured Helvetia domain. Use scenario codes CLI-SCEN-01 … CLI-SCEN-15 after seeding.",
+      "item": [
+        {
+          "name": "Get Client — expired KYC (CLI-SCEN-01)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/CLI-SCEN-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "CLI-SCEN-01"]
+            },
+            "description": "Scenario: expired KYC document."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client — delayed transfer (CLI-SCEN-03)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/CLI-SCEN-03",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "CLI-SCEN-03"]
+            },
+            "description": "Scenario: delayed transfer. Pair with Get Transactions for the same ref."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client (variable)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientRef}}"]
+            },
+            "description": "Client profile using collection variable `clientRef` (default CLI-SCEN-01)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientRef}}", "accounts"]
+            },
+            "description": "List accounts and account-level restrictions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientRef}}", "transactions"]
+            },
+            "description": "List transactions across all client accounts. Try with clientRef=CLI-SCEN-03 for a delayed transfer."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Interactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/interactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientRef}}", "interactions"]
+            },
+            "description": "List client interactions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Service Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientRef}}/service-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientRef}}", "service-requests"]
+            },
+            "description": "List client service requests."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "clientRef",
+      "value": "CLI-SCEN-01",
+      "type": "string"
+    }
+  ]
+}

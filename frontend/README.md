@@ -34,18 +34,27 @@ src/
 
 ## Local setup
 
-From the repo root, start the backend first:
+**Option A — full stack via Compose** (from repo root):
 
 ```bash
-uvicorn app.main:app --reload
+docker compose up --build
 ```
 
-Then in `frontend/`:
+Open `http://localhost:5173`. The Compose `frontend` service runs Vite dev and sets `VITE_API_URL=http://localhost:8000` (browser → host-mapped API). Production UI remains on Vercel.
+
+**Option B — frontend only** (API already running):
 
 ```bash
 npm install
 cp .env.example .env.local
 npm run dev
+```
+
+From the repo root, start the backend first if needed:
+
+```bash
+uvicorn app.main:app --reload
+# or: docker compose up api postgres
 ```
 
 Open `http://localhost:5173`.

@@ -1,0 +1,19 @@
+{
+  "id": "d9413d68-a00b-4ce0-87c6-d4f91b83af98",
+  "name": "Swiss Wealth - Local Docker",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "enabled": true
+    },
+    {
+      "key": "clientRef",
+      "value": "CLI-SCEN-01",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-08-01T08:00:00.000Z",
+  "_postman_exported_using": "Postman"
+}
