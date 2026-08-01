@@ -112,6 +112,8 @@ def generate_answer(
     question: str,
     history: list[ChatMessage] | None = None,
     rewritten_query: str | None = None,
+    *,
+    role: str | None = None,
 ) -> dict:
     """Retrieve active policies and generate a grounded answer (or abstain)."""
     start = time.perf_counter()
@@ -129,7 +131,7 @@ def generate_answer(
         hits = retrieve_policies(
             session,
             search_query,
-            filters=RetrievalFilters(status="active"),
+            filters=RetrievalFilters(status="active", role=role),
         )
     finally:
         session.close()
