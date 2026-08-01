@@ -1,6 +1,6 @@
 # System Architecture
 
-**As of:** v0.3 (incremental through v0.36)
+**As of:** v0.4 incremental (through hybrid `/ask` cutover)
 
 How the running application is wired: HTTP entrypoints, services, and data stores.
 
@@ -20,7 +20,7 @@ flowchart TB
 
   subgraph compose [Docker Compose — local]
     API[swiss-wealth-api<br/>uvicorn :8000]
-    PG[(postgres:5432<br/>helvetia_bank)]
+    PG[(postgres:5432<br/>helvetia_bank + pgvector)]
     PgAdmin[pgadmin:5050]
   end
 
@@ -29,9 +29,15 @@ flowchart TB
     ClientsRouter[app.api.clients<br/>/clients/*]
   end
 
-  subgraph rag [Document RAG — parallel path]
+  subgraph ask_path [Policy Q&A]
     Orchestrator[app.assistant.orchestrator]
-    Retriever[app.rag.retriever]
+    Generator[app.rag.generator]
+    Hybrid[app.retrieval<br/>vector + FTS + RRF]
+    Policies[data/policies/]
+  end
+
+  subgraph legacy [Legacy Chroma path]
+    ChromaIngest[POST /ingest<br/>app.rag.ingest]
     Chroma[(ChromaDB<br/>vector_store/)]
     Docs[data/documents/]
   end
@@ -41,6 +47,7 @@ flowchart TB
     Session[app.database.session]
     Models[app.database.models]
     Seed[scripts/seed_db.py]
+    PolicyIngest[scripts/ingest_policies.py]
   end
 
   Postman --> API
@@ -49,9 +56,15 @@ flowchart TB
   API --> ClientsRouter
 
   CoreRouter --> Orchestrator
-  Orchestrator --> Retriever
-  Retriever --> Chroma
-  Docs -. ingest .-> Chroma
+  Orchestrator --> Generator
+  Generator --> Hybrid
+  Hybrid --> PG
+  Policies -. ingest .-> PolicyIngest
+  PolicyIngest --> PG
+
+  CoreRouter -. legacy .-> ChromaIngest
+  ChromaIngest --> Chroma
+  Docs -. legacy ingest .-> Chroma
 
   ClientsRouter --> ClientRead
   ClientRead --> Session
@@ -69,8 +82,9 @@ flowchart TB
 | Path | Router | Backend | Data store |
 | ---- | ------ | ------- | ---------- |
 | `GET /`, `GET /health` | `app.api.routes` | — | — |
-| `POST /ingest` | `app.api.routes` | `app.rag.ingest` | ChromaDB |
-| `POST /ask` | `app.api.routes` | `app.assistant.orchestrator` → RAG | ChromaDB + LLM |
+| `POST /ingest` | `app.api.routes` | `app.rag.ingest` (legacy Chroma) | ChromaDB |
+| Policy ingest (CLI) | — | `scripts/ingest_policies.py` | PostgreSQL + pgvector |
+| `POST /ask` | `app.api.routes` | `app.assistant.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
 | `GET /clients/{ref}` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/accounts` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
 | `GET /clients/{ref}/transactions` | `app.api.clients` | `app.services.client_read` | PostgreSQL |
@@ -90,6 +104,17 @@ HTTP request
   → PostgreSQL
 ```
 
+## Layering (policy `/ask`)
+
+```text
+HTTP POST /ask
+  → app/assistant/orchestrator.py
+  → app/rag/generator.py
+  → app/retrieval (vector + FTS + RRF, active filters)
+  → PostgreSQL knowledge_* tables
+  → LLM grounded answer + sources
+```
+
 ## Local stack
 
 | Service | Image / build | Port | Role |
@@ -98,7 +123,8 @@ HTTP request
 | `postgres` | `pgvector/pgvector:pg16` | 5432 | Domain + knowledge (pgvector) |
 | `pgadmin` | `dpage/pgadmin4:8` | 5050 | DB inspection UI |
 
-API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.
+API connects to Postgres via `DATABASE_URL` host `postgres` inside Compose.  
+Policy corpus: `docker compose exec api python scripts/ingest_policies.py`.
 
 ## Related docs
 

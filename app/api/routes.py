@@ -33,12 +33,16 @@ def health_check():
 
 @router.post("/ingest", response_model=IngestResponse)
 def ingest(request: IngestRequest):
+    """Legacy Chroma ingest for data/documents.
+
+    Helvetia policy corpus: ``docker compose exec api python scripts/ingest_policies.py``.
+    """
 
     try:
         result = run_ingestion(request.source_dir)
 
         logger.info(
-            "Ingest requested: source_dir=%s documents=%d chunks=%d",
+            "Legacy Chroma ingest requested: source_dir=%s documents=%d chunks=%d",
             request.source_dir,
             result["documents_indexed"],
             result["chunks_created"],

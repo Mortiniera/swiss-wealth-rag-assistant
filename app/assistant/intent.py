@@ -14,30 +14,32 @@ Intent = Literal["RAG_QUERY", "ASSISTANT_META", "OUT_OF_SCOPE"]
 VALID_INTENTS = {"RAG_QUERY", "ASSISTANT_META", "OUT_OF_SCOPE"}
 
 OUT_OF_SCOPE_MESSAGE = (
-    "I can only answer questions about Swiss private banking and wealth management "
-    "based on the indexed documents. Please ask about topics such as sustainable investing, "
-    "family governance or the approaches of UBS, Pictet, Lombard Odier or Julius Baer."
+    "I can only answer questions about Helvetia Private Bank internal policies and "
+    "procedures (for example KYC, AML, transfers, restrictions, complaints, and SLAs). "
+    "Please ask an operations or compliance question covered by those indexed policies."
 )
 
 ASSISTANT_META_MESSAGE = (
-    "I am a Swiss Wealth RAG Assistant. I answer questions using indexed public-style "
-    "documents about Lombard Odier, UBS, Picte and Julius Baer, covering topics like "
-    "sustainable investing, family governance, digital banking and private markets. "
-    "I ground every answer in retrieved sources and show institution, document and relevance scores. "
-    "I cannot browse the web or answer questions outside those topics."
+    "I am Helvetia's internal operations assistant. I answer questions using ingested "
+    "fictional internal policies and procedures (KYC, AML, transfers, restrictions, "
+    "client communication, escalations, and related topics). Answers are grounded in "
+    "retrieved policy sources with department, document title, and relevance scores. "
+    "I cannot browse the web, move money, or answer topics outside those policies."
 )
 
 
 def _build_intent_prompt(question: str, history: list[ChatMessage]) -> str:
+    """Build the LLM prompt that maps a user message to one intent label."""
     return f"""Classify the user's latest message into exactly one intent.
 Intents:
-- RAG_QUERY: questions about Swiss private banking, wealth management or indexed institutions (UBS, Pictet, Lombard Odier, Julius Baer), including comparisons and follow-ups.
-- ASSISTANT_META: questions about the assistant itself, its capabilities, limitations or which sources/documents it uses.
-- OUT_OF_SCOPE: unrelated topics (sports, weather, general questions, coding help, etc.).
+- RAG_QUERY: questions about Helvetia Private Bank internal policies/procedures or day-to-day private-banking operations that those policies cover (KYC refresh, AML escalation, transfer review, account restrictions, complaints, suitability, client communication, cross-border limits, SLAs, data access, email approval, escalation). Include comparisons and follow-ups.
+- ASSISTANT_META: questions about the assistant itself, its capabilities, limitations, or which policy sources it uses.
+- OUT_OF_SCOPE: unrelated topics (sports, weather, general trivia, coding help, chemistry, public market gossip about other banks, etc.).
 
 Rules:
-- If the user asks about a bank or wealth topic, choose RAG_QUERY even if phrased casually.
-- Use conversation history to resolve ambiguous follow-ups or to have additional context.
+- If the user asks about internal banking operations, compliance, or policy rules, choose RAG_QUERY even if phrased casually.
+- Mentions of relationship managers (RM), transfers, KYC, AML, restrictions, or escalations are almost always RAG_QUERY.
+- Use conversation history to resolve ambiguous follow-ups.
 - Output only one label: RAG_QUERY, ASSISTANT_META or OUT_OF_SCOPE.
 
 Conversation history:
@@ -49,6 +51,7 @@ Intent:"""
 
 
 def classify_intent(question: str, history: list[ChatMessage] | None = None) -> Intent:
+    """Classify the latest user message into RAG_QUERY, ASSISTANT_META, or OUT_OF_SCOPE."""
     history = history or []
     configure_llm()
     prompt = _build_intent_prompt(question, history)
@@ -63,14 +66,16 @@ def classify_intent(question: str, history: list[ChatMessage] | None = None) -> 
         else:
             logger.warning("Unknown intent %r, defaulting to RAG_QUERY", label)
             label = "RAG_QUERY"
-    
+
     logger.info("Intent classified: question=%r intent=%s", question, label)
-    return label
+    return label  # type: ignore[return-value]
 
 
 def build_meta_response(question: str, history: list[ChatMessage] | None = None) -> dict:
+    """Return a fixed capability blurb without retrieval."""
     return {"answer": ASSISTANT_META_MESSAGE, "sources": []}
 
 
 def build_out_of_scope_response() -> dict:
+    """Return a fixed refusal for topics outside Helvetia policies."""
     return {"answer": OUT_OF_SCOPE_MESSAGE, "sources": []}

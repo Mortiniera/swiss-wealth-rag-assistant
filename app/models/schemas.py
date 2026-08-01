@@ -10,7 +10,11 @@ class ChatMessage(BaseModel):
 class IngestRequest(BaseModel):
     source_dir: str = Field(
         default="data/documents",
-        description="Directory containing documents to index"
+        description=(
+            "Legacy Chroma corpus directory. "
+            "Helvetia policies are ingested with: "
+            "docker compose exec api python scripts/ingest_policies.py"
+        ),
     )
 
 
@@ -34,7 +38,10 @@ class AskRequest(BaseModel):
 
 
 class Source(BaseModel):
-    institution: str
+    institution: str = Field(
+        ...,
+        description="Policy department (mapped into this legacy field name)",
+    )
     document_title: str
     source_file: str
     chunk_id: str

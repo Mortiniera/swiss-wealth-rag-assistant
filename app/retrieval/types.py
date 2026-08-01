@@ -24,6 +24,7 @@ class RetrievalHit:
     chunk_id: UUID
     document_id: str
     document_title: str
+    department: str
     source_file: str
     category: str
     text: str

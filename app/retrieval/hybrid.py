@@ -43,6 +43,7 @@ def reciprocal_rank_fusion(
                 chunk_id=hit.chunk_id,
                 document_id=hit.document_id,
                 document_title=hit.document_title,
+                department=hit.department,
                 source_file=hit.source_file,
                 category=hit.category,
                 text=hit.text,
