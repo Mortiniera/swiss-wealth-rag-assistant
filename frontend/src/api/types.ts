@@ -7,9 +7,21 @@ export type Source = {
   text: string;
 };
 
+export type EvidenceItem = {
+  label: string;
+  value: string;
+  source:
+    | "client_profile"
+    | "account_restrictions"
+    | "recent_transactions"
+    | "open_service_requests"
+    | "interaction_history";
+};
+
 export type AskResponse = {
   answer: string;
   sources: Source[];
+  evidence?: EvidenceItem[];
 };
 
 export type ChatMessage = {

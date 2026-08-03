@@ -24,9 +24,9 @@ export function clientAwarePrompts(client: SelectedClientContext | null): string
     ];
   }
   return [
-    `Why might ${client.code}'s outbound transfer stay in pending review?`,
-    `What does KYC refresh require when ${client.name}'s ID has expired?`,
-    `What account restrictions could block a transfer for ${client.code}?`,
-    `How should a complaint or service request be handled for this client?`,
+    "Why is this client's outbound transfer still in pending review?",
+    "Does expired KYC explain a transfer hold for this client?",
+    "What should I verify before promising a value date?",
+    "How should a complaint or service request be handled for this client?",
   ];
 }

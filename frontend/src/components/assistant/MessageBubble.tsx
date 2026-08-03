@@ -1,4 +1,5 @@
 import type { Message } from "../../types/chat";
+import { EvidenceChips } from "./EvidenceChips";
 import { MessageSources } from "./MessageSources";
 import { RichText } from "./RichText";
 
@@ -9,6 +10,7 @@ type MessageBubbleProps = {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const sourceCount = message.sources?.length ?? 0;
+  const evidence = message.evidence ?? [];
 
   return (
     <div className={`mb-4 flex flex-col px-1 ${isUser ? "items-end" : "items-stretch"}`}>
@@ -23,6 +25,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             messageId={message.timestamp}
             sourceCount={sourceCount}
           />
+          <EvidenceChips evidence={evidence} />
         </div>
       )}
 

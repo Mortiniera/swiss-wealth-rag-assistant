@@ -6,11 +6,6 @@ How the running application is wired: HTTP entrypoints, services, and data store
 
 ## Runtime overview
 
-![System architecture — v0.3](assets/system-v0.3.png)
-
-<details>
-<summary>Mermaid source (editable)</summary>
-
 ```mermaid
 flowchart TB
   subgraph clients [Clients]
@@ -31,7 +26,9 @@ flowchart TB
   end
 
   subgraph ask_path [Policy Q&A]
-    Orchestrator[app.assistant.orchestrator]
+    Orchestrator[app.agent.orchestrator]
+    Routing[app.agent.routing + nodes]
+    Tools[app.tools]
     Generator[app.rag.generator]
     Hybrid[app.retrieval<br/>vector + FTS + RRF]
     Policies[data/policies/]
@@ -51,7 +48,10 @@ flowchart TB
   API --> ClientsRouter
 
   CoreRouter --> Orchestrator
-  Orchestrator --> Generator
+  Orchestrator --> Routing
+  Routing --> Tools
+  Routing --> Generator
+  Tools --> PG
   Generator --> Hybrid
   Hybrid --> PG
   CoreRouter --> PolicyIngest
@@ -67,8 +67,6 @@ flowchart TB
   PgAdmin --> PG
 ```
 
-</details>
-
 ## Request paths
 
 | Path | Router | Backend | Data store |
@@ -76,7 +74,7 @@ flowchart TB
 | `GET /`, `GET /health` | `app.api.routes` | — | — |
 | `POST /ingest` | `app.api.routes` | `app.rag.policy_ingest` | PostgreSQL + pgvector |
 | Policy ingest (CLI) | — | `scripts/ingest_policies.py` | PostgreSQL + pgvector |
-| `POST /ask` | `app.api.routes` | `app.assistant.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
+| `POST /ask` | `app.api.routes` | `app.agent.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
 | `GET /actors` | `app.api.actors` | `app.services.actor_read` | PostgreSQL |
 | `GET /actors/{code}/workspace` | `app.api.actors` | `app.services.actor_read` | PostgreSQL |
 | `GET /clients` | `app.api.clients` | `app.services.client_read` / `actor_read` | PostgreSQL |
@@ -109,7 +107,9 @@ HTTP request
 
 ```text
 HTTP POST /ask
-  → app/assistant/orchestrator.py
+  → app/agent/orchestrator.py (bounded runner)
+  → app/agent/routing.py + nodes/ (classify → select_tools? → run_tools? → rewrite|meta|oos → generate)
+  → app/tools (selected read-only client tools when client_ref present)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)
   → PostgreSQL knowledge_* tables
