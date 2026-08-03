@@ -7,9 +7,16 @@ export type Source = {
   text: string;
 };
 
+export type EvidenceItem = {
+  label: string;
+  value: string;
+  source: "client_profile";
+};
+
 export type AskResponse = {
   answer: string;
   sources: Source[];
+  evidence?: EvidenceItem[];
 };
 
 export type ChatMessage = {

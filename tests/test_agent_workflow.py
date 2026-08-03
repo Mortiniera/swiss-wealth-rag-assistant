@@ -167,3 +167,8 @@ def test_runner_fetches_profile_when_client_in_question():
         STEP_REWRITE,
         STEP_GENERATE,
     ]
+    assert result["evidence"][0] == {
+        "label": "KYC",
+        "value": "expired",
+        "source": "client_profile",
+    }

@@ -7,6 +7,7 @@ from collections.abc import Callable
 
 from app.agent import nodes
 from app.agent.client_ref import extract_client_ref
+from app.agent.facts import evidence_from_tool_results
 from app.agent.routing import (
     END,
     STEP_CLASSIFY,
@@ -31,6 +32,7 @@ CONTROLLED_FAILURE = {
         "Please try again or rephrase your question."
     ),
     "sources": [],
+    "evidence": [],
 }
 
 NodeFn = Callable[[AgentState], None]
@@ -47,8 +49,13 @@ NODES: dict[str, NodeFn] = {
 
 def _finalize(state: AgentState) -> dict:
     """Map terminal state to the /ask response dict."""
+    evidence = evidence_from_tool_results(state.tool_results)
     if state.status == "completed" and state.answer is not None:
-        return {"answer": state.answer, "sources": state.sources}
+        return {
+            "answer": state.answer,
+            "sources": state.sources,
+            "evidence": evidence,
+        }
     state.status = "failed"
     if state.error is None:
         state.error = "Workflow ended without a completed answer"

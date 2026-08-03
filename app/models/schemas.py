@@ -49,9 +49,18 @@ class Source(BaseModel):
     text: str = Field(..., description="Short excerpt from the retrieved chunk")
 
 
+class EvidenceItem(BaseModel):
+    """Structured fact chip from a read-only tool (not a policy citation)."""
+
+    label: str
+    value: str
+    source: Literal["client_profile"] = "client_profile"
+
+
 class AskResponse(BaseModel):
     answer: str
     sources: list[Source]
+    evidence: list[EvidenceItem] = Field(default_factory=list)
 
 
 class RootResponse(BaseModel):
