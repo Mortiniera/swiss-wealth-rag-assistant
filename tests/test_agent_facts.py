@@ -25,11 +25,53 @@ def test_format_facts_leads_with_kyc_signal():
     )
     assert facts is not None
     assert "Helena Vogt" in facts
-    assert "Primary signal: KYC expired" in facts
+    assert "Primary signal(s)" in facts
+    assert "KYC expired" in facts
     assert "enhanced-review" in facts
 
 
-def test_evidence_chips_from_profile():
+def test_format_facts_includes_restriction_and_kyc_primaries():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_client_profile",
+                "ok": True,
+                "data": {
+                    "client_code": "CLI-000238",
+                    "full_name": "Adrian Baumann",
+                    "status": "dormant",
+                    "segment": "hnwi",
+                    "residency_country": "CH",
+                    "kyc_status": "expired",
+                    "kyc_document_type": "passport",
+                    "kyc_document_expiry": "2027-04-13",
+                    "primary_rm_name": "Elena Brunner",
+                },
+            },
+            {
+                "tool": "get_account_restrictions",
+                "ok": True,
+                "data": {
+                    "restriction_count": 1,
+                    "restrictions": [
+                        {
+                            "account_code": "ACC-000602",
+                            "restriction_type": "debit_block",
+                            "reason_code": "manual_review",
+                            "status": "active",
+                        }
+                    ],
+                },
+            },
+        ]
+    )
+    assert facts is not None
+    assert "KYC expired" in facts
+    assert "ACC-000602" in facts
+    assert "debit block" in facts
+
+
+def test_evidence_chips_from_profile_and_restrictions():
     evidence = evidence_from_tool_results(
         [
             {
@@ -41,7 +83,19 @@ def test_evidence_chips_from_profile():
                     "segment": "hnwi",
                     "primary_rm_name": "Elena Meier",
                 },
-            }
+            },
+            {
+                "tool": "get_account_restrictions",
+                "ok": True,
+                "data": {
+                    "restrictions": [
+                        {
+                            "account_code": "ACC-000602",
+                            "restriction_type": "debit_block",
+                        }
+                    ],
+                },
+            },
         ]
     )
     assert evidence[0] == {
@@ -49,8 +103,12 @@ def test_evidence_chips_from_profile():
         "value": "expired",
         "source": "client_profile",
     }
-    assert any(item["label"] == "Doc expiry" for item in evidence)
-    assert any(item["label"] == "Primary RM" for item in evidence)
+    assert any(
+        item["label"] == "Restriction"
+        and item["source"] == "account_restrictions"
+        and "ACC-000602" in item["value"]
+        for item in evidence
+    )
 
 
 def test_failed_tools_yield_no_evidence():

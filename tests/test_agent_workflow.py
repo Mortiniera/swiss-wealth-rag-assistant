@@ -9,6 +9,7 @@ from app.agent.routing import (
     END,
     STEP_CLASSIFY,
     STEP_FETCH_PROFILE,
+    STEP_FETCH_RESTRICTIONS,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
@@ -43,7 +44,7 @@ def test_routing_rag_path_without_client():
     assert next_step(state) == END
 
 
-def test_routing_rag_path_with_client_fetches_profile():
+def test_routing_rag_path_with_client_fetches_profile_then_restrictions():
     state = AgentState(
         question="Regarding CLI-SCEN-01: KYC?",
         intent="RAG_QUERY",
@@ -52,6 +53,8 @@ def test_routing_rag_path_with_client_fetches_profile():
     )
     assert next_step(state) == STEP_FETCH_PROFILE
     state.step = STEP_FETCH_PROFILE
+    assert next_step(state) == STEP_FETCH_RESTRICTIONS
+    state.step = STEP_FETCH_RESTRICTIONS
     assert next_step(state) == STEP_REWRITE
 
 
@@ -84,7 +87,7 @@ def test_runner_respects_max_steps():
         result = handle_question("never ends")
 
     assert result == CONTROLLED_FAILURE
-    assert MAX_STEPS == 8
+    assert MAX_STEPS == 10
 
 
 def test_runner_oos_uses_classify_then_respond():
@@ -114,14 +117,14 @@ def test_runner_oos_uses_classify_then_respond():
     assert seen == [STEP_CLASSIFY, STEP_RESPOND_OOS]
 
 
-def test_runner_fetches_profile_when_client_in_question():
+def test_runner_fetches_profile_and_restrictions_when_client_in_question():
     seen: list[str] = []
 
     def tracking_classify(state: AgentState) -> None:
         state.intent = "RAG_QUERY"
         seen.append(state.step or "")
 
-    def tracking_fetch(state: AgentState) -> None:
+    def tracking_fetch_profile(state: AgentState) -> None:
         seen.append(state.step or "")
         state.tool_results.append(
             ToolResult(
@@ -136,13 +139,33 @@ def test_runner_fetches_profile_when_client_in_question():
             ).to_dict()
         )
 
+    def tracking_fetch_restrictions(state: AgentState) -> None:
+        seen.append(state.step or "")
+        state.tool_results.append(
+            ToolResult(
+                tool="get_account_restrictions",
+                ok=True,
+                data={
+                    "restriction_count": 1,
+                    "restrictions": [
+                        {
+                            "account_code": "ACC-000602",
+                            "restriction_type": "debit_block",
+                            "reason_code": "manual_review",
+                            "status": "active",
+                        }
+                    ],
+                },
+            ).to_dict()
+        )
+
     def tracking_rewrite(state: AgentState) -> None:
         seen.append(state.step or "")
         state.rewritten_query = "transfer delay CLI-SCEN-01"
 
     def tracking_generate(state: AgentState) -> None:
         seen.append(state.step or "")
-        assert state.tool_results
+        assert len(state.tool_results) == 2
         state.answer = "ok"
         state.sources = []
         state.status = "completed"
@@ -151,7 +174,8 @@ def test_runner_fetches_profile_when_client_in_question():
         "app.agent.orchestrator.NODES",
         {
             STEP_CLASSIFY: tracking_classify,
-            STEP_FETCH_PROFILE: tracking_fetch,
+            STEP_FETCH_PROFILE: tracking_fetch_profile,
+            STEP_FETCH_RESTRICTIONS: tracking_fetch_restrictions,
             STEP_REWRITE: tracking_rewrite,
             STEP_GENERATE: tracking_generate,
         },
@@ -164,6 +188,7 @@ def test_runner_fetches_profile_when_client_in_question():
     assert seen == [
         STEP_CLASSIFY,
         STEP_FETCH_PROFILE,
+        STEP_FETCH_RESTRICTIONS,
         STEP_REWRITE,
         STEP_GENERATE,
     ]
@@ -172,3 +197,7 @@ def test_runner_fetches_profile_when_client_in_question():
         "value": "expired",
         "source": "client_profile",
     }
+    assert any(
+        item["label"] == "Restriction" and "ACC-000602" in item["value"]
+        for item in result["evidence"]
+    )

@@ -7,8 +7,12 @@ type EvidenceChipsProps = {
 
 function toneFor(label: string, value: string): "neutral" | "warning" | "danger" | "info" {
   const v = value.toLowerCase();
-  if (label.toLowerCase() === "kyc" && (v.includes("expired") || v.includes("refresh"))) {
+  const l = label.toLowerCase();
+  if (l === "kyc" && (v.includes("expired") || v.includes("refresh"))) {
     return v.includes("expired") ? "danger" : "warning";
+  }
+  if (l === "restriction") {
+    return "warning";
   }
   return "neutral";
 }

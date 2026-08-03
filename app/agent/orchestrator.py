@@ -12,6 +12,7 @@ from app.agent.routing import (
     END,
     STEP_CLASSIFY,
     STEP_FETCH_PROFILE,
+    STEP_FETCH_RESTRICTIONS,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
@@ -24,7 +25,7 @@ from app.models.schemas import ChatMessage
 logger = logging.getLogger(__name__)
 
 MAX_HISTORY_TURNS = 10
-MAX_STEPS = 8
+MAX_STEPS = 10
 
 CONTROLLED_FAILURE = {
     "answer": (
@@ -40,6 +41,7 @@ NodeFn = Callable[[AgentState], None]
 NODES: dict[str, NodeFn] = {
     STEP_CLASSIFY: nodes.classify,
     STEP_FETCH_PROFILE: nodes.fetch_profile,
+    STEP_FETCH_RESTRICTIONS: nodes.fetch_restrictions,
     STEP_REWRITE: nodes.rewrite,
     STEP_GENERATE: nodes.generate,
     STEP_RESPOND_META: nodes.respond_meta,

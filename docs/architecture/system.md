@@ -108,8 +108,8 @@ HTTP request
 ```text
 HTTP POST /ask
   → app/agent/orchestrator.py (bounded runner)
-  → app/agent/routing.py + nodes/ (classify → fetch_profile? → rewrite|meta|oos → generate)
-  → app/tools/get_client_profile.py (when client_ref present)
+  → app/agent/routing.py + nodes/ (classify → fetch_profile? → fetch_restrictions? → rewrite|meta|oos → generate)
+  → app/tools (get_client_profile, get_account_restrictions when client_ref present)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)
   → PostgreSQL knowledge_* tables

@@ -9,6 +9,7 @@ END = "__end__"
 
 STEP_CLASSIFY = "classify"
 STEP_FETCH_PROFILE = "fetch_profile"
+STEP_FETCH_RESTRICTIONS = "fetch_restrictions"
 STEP_REWRITE = "rewrite"
 STEP_GENERATE = "generate"
 STEP_RESPOND_META = "respond_meta"
@@ -37,6 +38,9 @@ def next_step(state: AgentState) -> str:
         return STEP_REWRITE
 
     if state.step == STEP_FETCH_PROFILE:
+        return STEP_FETCH_RESTRICTIONS
+
+    if state.step == STEP_FETCH_RESTRICTIONS:
         return STEP_REWRITE
 
     if state.step == STEP_REWRITE:
