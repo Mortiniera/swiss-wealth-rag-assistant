@@ -20,6 +20,7 @@ class AgentState:
     actor_employee_code: str | None = None
     client_ref: str | None = None
     intent: str | None = None
+    selected_tools: list[str] = field(default_factory=list)
     rewritten_query: str | None = None
     tool_results: list[dict[str, Any]] = field(default_factory=list)
     answer: str | None = None

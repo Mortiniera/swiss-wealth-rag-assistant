@@ -11,14 +11,12 @@ from app.agent.facts import evidence_from_tool_results
 from app.agent.routing import (
     END,
     STEP_CLASSIFY,
-    STEP_FETCH_PROFILE,
-    STEP_FETCH_RESTRICTIONS,
-    STEP_FETCH_SERVICE_REQUESTS,
-    STEP_FETCH_TRANSACTIONS,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
     STEP_REWRITE,
+    STEP_RUN_TOOLS,
+    STEP_SELECT_TOOLS,
     next_step,
 )
 from app.agent.state import AgentState
@@ -42,10 +40,8 @@ NodeFn = Callable[[AgentState], None]
 
 NODES: dict[str, NodeFn] = {
     STEP_CLASSIFY: nodes.classify,
-    STEP_FETCH_PROFILE: nodes.fetch_profile,
-    STEP_FETCH_RESTRICTIONS: nodes.fetch_restrictions,
-    STEP_FETCH_TRANSACTIONS: nodes.fetch_transactions,
-    STEP_FETCH_SERVICE_REQUESTS: nodes.fetch_service_requests,
+    STEP_SELECT_TOOLS: nodes.select_tools,
+    STEP_RUN_TOOLS: nodes.run_tools,
     STEP_REWRITE: nodes.rewrite,
     STEP_GENERATE: nodes.generate,
     STEP_RESPOND_META: nodes.respond_meta,

@@ -1,6 +1,6 @@
 """Unit tests for bounded agent routing and runner limits."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from app.agent.client_ref import extract_client_ref
 from app.agent.intent import OUT_OF_SCOPE_MESSAGE
@@ -8,14 +8,12 @@ from app.agent.orchestrator import CONTROLLED_FAILURE, MAX_STEPS, handle_questio
 from app.agent.routing import (
     END,
     STEP_CLASSIFY,
-    STEP_FETCH_PROFILE,
-    STEP_FETCH_RESTRICTIONS,
-    STEP_FETCH_SERVICE_REQUESTS,
-    STEP_FETCH_TRANSACTIONS,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
     STEP_REWRITE,
+    STEP_RUN_TOOLS,
+    STEP_SELECT_TOOLS,
     next_step,
 )
 from app.agent.state import AgentState
@@ -46,21 +44,17 @@ def test_routing_rag_path_without_client():
     assert next_step(state) == END
 
 
-def test_routing_rag_path_with_client_fetches_all_tools():
+def test_routing_rag_path_with_client_selects_then_runs_tools():
     state = AgentState(
         question="Regarding CLI-SCEN-01: KYC?",
         intent="RAG_QUERY",
         client_ref="CLI-SCEN-01",
         step=STEP_CLASSIFY,
     )
-    assert next_step(state) == STEP_FETCH_PROFILE
-    state.step = STEP_FETCH_PROFILE
-    assert next_step(state) == STEP_FETCH_RESTRICTIONS
-    state.step = STEP_FETCH_RESTRICTIONS
-    assert next_step(state) == STEP_FETCH_TRANSACTIONS
-    state.step = STEP_FETCH_TRANSACTIONS
-    assert next_step(state) == STEP_FETCH_SERVICE_REQUESTS
-    state.step = STEP_FETCH_SERVICE_REQUESTS
+    assert next_step(state) == STEP_SELECT_TOOLS
+    state.step = STEP_SELECT_TOOLS
+    assert next_step(state) == STEP_RUN_TOOLS
+    state.step = STEP_RUN_TOOLS
     assert next_step(state) == STEP_REWRITE
 
 
@@ -123,15 +117,26 @@ def test_runner_oos_uses_classify_then_respond():
     assert seen == [STEP_CLASSIFY, STEP_RESPOND_OOS]
 
 
-def test_runner_fetches_all_client_tools_when_client_in_question():
+def test_runner_selects_and_runs_tools_for_client_question():
     seen: list[str] = []
 
     def tracking_classify(state: AgentState) -> None:
         state.intent = "RAG_QUERY"
         seen.append(state.step or "")
 
-    def tracking_fetch_profile(state: AgentState) -> None:
+    def tracking_select(state: AgentState) -> None:
         seen.append(state.step or "")
+        state.selected_tools = [
+            "get_client_profile",
+            "get_recent_transactions",
+        ]
+
+    def tracking_run(state: AgentState) -> None:
+        seen.append(state.step or "")
+        assert state.selected_tools == [
+            "get_client_profile",
+            "get_recent_transactions",
+        ]
         state.tool_results.append(
             ToolResult(
                 tool="get_client_profile",
@@ -144,36 +149,12 @@ def test_runner_fetches_all_client_tools_when_client_in_question():
                 },
             ).to_dict()
         )
-
-    def tracking_fetch_restrictions(state: AgentState) -> None:
-        seen.append(state.step or "")
-        state.tool_results.append(
-            ToolResult(
-                tool="get_account_restrictions",
-                ok=True,
-                data={"restriction_count": 0, "restrictions": []},
-            ).to_dict()
-        )
-
-    def tracking_fetch_transactions(state: AgentState) -> None:
-        seen.append(state.step or "")
         state.tool_results.append(
             ToolResult(
                 tool="get_recent_transactions",
                 ok=True,
                 data={
                     "transaction_count": 1,
-                    "returned_count": 1,
-                    "pending_or_unusual_count": 1,
-                    "transactions": [
-                        {
-                            "transaction_code": "TXN-SCEN-01",
-                            "status": "pending",
-                            "amount": "250000.00",
-                            "currency": "CHF",
-                            "delay_reason_code": "kyc_expired",
-                        }
-                    ],
                     "pending_or_unusual": [
                         {
                             "transaction_code": "TXN-SCEN-01",
@@ -190,35 +171,13 @@ def test_runner_fetches_all_client_tools_when_client_in_question():
             ).to_dict()
         )
 
-    def tracking_fetch_service_requests(state: AgentState) -> None:
-        seen.append(state.step or "")
-        state.tool_results.append(
-            ToolResult(
-                tool="get_open_service_requests",
-                ok=True,
-                data={
-                    "request_count": 1,
-                    "open_count": 1,
-                    "open_requests": [
-                        {
-                            "request_code": "SRQ-SCEN-01",
-                            "request_type": "kyc_refresh",
-                            "status": "open",
-                            "priority": "high",
-                            "subject": "KYC refresh due",
-                        }
-                    ],
-                },
-            ).to_dict()
-        )
-
     def tracking_rewrite(state: AgentState) -> None:
         seen.append(state.step or "")
         state.rewritten_query = "transfer delay CLI-SCEN-01"
 
     def tracking_generate(state: AgentState) -> None:
         seen.append(state.step or "")
-        assert len(state.tool_results) == 4
+        assert len(state.tool_results) == 2
         state.answer = "ok"
         state.sources = []
         state.status = "completed"
@@ -227,10 +186,8 @@ def test_runner_fetches_all_client_tools_when_client_in_question():
         "app.agent.orchestrator.NODES",
         {
             STEP_CLASSIFY: tracking_classify,
-            STEP_FETCH_PROFILE: tracking_fetch_profile,
-            STEP_FETCH_RESTRICTIONS: tracking_fetch_restrictions,
-            STEP_FETCH_TRANSACTIONS: tracking_fetch_transactions,
-            STEP_FETCH_SERVICE_REQUESTS: tracking_fetch_service_requests,
+            STEP_SELECT_TOOLS: tracking_select,
+            STEP_RUN_TOOLS: tracking_run,
             STEP_REWRITE: tracking_rewrite,
             STEP_GENERATE: tracking_generate,
         },
@@ -242,11 +199,26 @@ def test_runner_fetches_all_client_tools_when_client_in_question():
     assert result["answer"] == "ok"
     assert seen == [
         STEP_CLASSIFY,
-        STEP_FETCH_PROFILE,
-        STEP_FETCH_RESTRICTIONS,
-        STEP_FETCH_TRANSACTIONS,
-        STEP_FETCH_SERVICE_REQUESTS,
+        STEP_SELECT_TOOLS,
+        STEP_RUN_TOOLS,
         STEP_REWRITE,
         STEP_GENERATE,
     ]
-    assert any(item["label"] == "Open SR" for item in result["evidence"])
+    assert any(item["label"] == "Pending txn" for item in result["evidence"])
+
+
+def test_run_tools_node_dispatches_selected_only():
+    from app.agent.nodes.run_tools import run as run_tools
+
+    state = AgentState(
+        question="pending transfer?",
+        client_ref="CLI-SCEN-01",
+        selected_tools=["get_recent_transactions"],
+    )
+    with patch("app.agent.nodes.run_tools.fetch_transactions.run") as mock_txn, patch(
+        "app.agent.nodes.run_tools.fetch_profile.run"
+    ) as mock_profile:
+        run_tools(state)
+
+    mock_txn.assert_called_once_with(state)
+    mock_profile.assert_not_called()

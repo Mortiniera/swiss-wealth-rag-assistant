@@ -8,10 +8,8 @@ from app.agent.state import AgentState
 END = "__end__"
 
 STEP_CLASSIFY = "classify"
-STEP_FETCH_PROFILE = "fetch_profile"
-STEP_FETCH_RESTRICTIONS = "fetch_restrictions"
-STEP_FETCH_TRANSACTIONS = "fetch_transactions"
-STEP_FETCH_SERVICE_REQUESTS = "fetch_service_requests"
+STEP_SELECT_TOOLS = "select_tools"
+STEP_RUN_TOOLS = "run_tools"
 STEP_REWRITE = "rewrite"
 STEP_GENERATE = "generate"
 STEP_RESPOND_META = "respond_meta"
@@ -36,19 +34,13 @@ def next_step(state: AgentState) -> str:
         if state.intent == "ASSISTANT_META":
             return STEP_RESPOND_META
         if state.client_ref:
-            return STEP_FETCH_PROFILE
+            return STEP_SELECT_TOOLS
         return STEP_REWRITE
 
-    if state.step == STEP_FETCH_PROFILE:
-        return STEP_FETCH_RESTRICTIONS
+    if state.step == STEP_SELECT_TOOLS:
+        return STEP_RUN_TOOLS
 
-    if state.step == STEP_FETCH_RESTRICTIONS:
-        return STEP_FETCH_TRANSACTIONS
-
-    if state.step == STEP_FETCH_TRANSACTIONS:
-        return STEP_FETCH_SERVICE_REQUESTS
-
-    if state.step == STEP_FETCH_SERVICE_REQUESTS:
+    if state.step == STEP_RUN_TOOLS:
         return STEP_REWRITE
 
     if state.step == STEP_REWRITE:
