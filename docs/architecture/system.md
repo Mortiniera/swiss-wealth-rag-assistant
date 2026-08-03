@@ -6,11 +6,6 @@ How the running application is wired: HTTP entrypoints, services, and data store
 
 ## Runtime overview
 
-![System architecture — v0.3](assets/system-v0.3.png)
-
-<details>
-<summary>Mermaid source (editable)</summary>
-
 ```mermaid
 flowchart TB
   subgraph clients [Clients]
@@ -32,6 +27,7 @@ flowchart TB
 
   subgraph ask_path [Policy Q&A]
     Orchestrator[app.agent.orchestrator]
+    Routing[app.agent.routing + nodes]
     Generator[app.rag.generator]
     Hybrid[app.retrieval<br/>vector + FTS + RRF]
     Policies[data/policies/]
@@ -51,7 +47,8 @@ flowchart TB
   API --> ClientsRouter
 
   CoreRouter --> Orchestrator
-  Orchestrator --> Generator
+  Orchestrator --> Routing
+  Routing --> Generator
   Generator --> Hybrid
   Hybrid --> PG
   CoreRouter --> PolicyIngest
@@ -66,8 +63,6 @@ flowchart TB
   Seed --> PG
   PgAdmin --> PG
 ```
-
-</details>
 
 ## Request paths
 
@@ -109,7 +104,8 @@ HTTP request
 
 ```text
 HTTP POST /ask
-  → app/agent/orchestrator.py
+  → app/agent/orchestrator.py (bounded runner)
+  → app/agent/routing.py + nodes/ (classify → rewrite|meta|oos → generate)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)
   → PostgreSQL knowledge_* tables

@@ -54,9 +54,9 @@ def test_ask_accepts_optional_history(client):
         score=0.02,
         channel="hybrid",
     )
-    with patch("app.agent.orchestrator.classify_intent", return_value="RAG_QUERY"), \
+    with patch("app.agent.nodes.classify.classify_intent", return_value="RAG_QUERY"), \
          patch(
-             "app.agent.orchestrator.rewrite_query",
+             "app.agent.nodes.rewrite.rewrite_query",
              return_value="client communication standards",
          ), \
          patch("app.rag.generator.retrieve_policies", return_value=[hit]), \

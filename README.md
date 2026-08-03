@@ -250,7 +250,7 @@ See `frontend/README.md` for frontend-specific setup.
 ```
 app/
   api/                 # FastAPI routes (core + clients)
-  agent/               # Intent → rewrite → generate
+  agent/               # Bounded workflow: state, routing, nodes
   retrieval/           # Hybrid pgvector + FTS + RRF
   rag/
     policy_registry.py # Load/validate data/policies
