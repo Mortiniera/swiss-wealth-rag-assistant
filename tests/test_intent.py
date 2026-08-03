@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from app.assistant.intent import (
+from app.agent.intent import (
     ASSISTANT_META_MESSAGE,
     OUT_OF_SCOPE_MESSAGE,
     classify_intent,
@@ -10,8 +10,8 @@ from app.assistant.intent import (
 def test_policy_question_classified_as_rag_query():
     question = "What should an RM do if they notice unusual fragmented transfers?"
 
-    with patch("app.assistant.intent.configure_llm"), \
-         patch("app.assistant.intent.LlamaSettings") as mock_settings:
+    with patch("app.agent.intent.configure_llm"), \
+         patch("app.agent.intent.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "RAG_QUERY"
         result = classify_intent(question)
 
@@ -26,8 +26,8 @@ def test_policy_question_classified_as_rag_query():
 def test_meta_question_classified_as_assistant_meta():
     question = "What can you do?"
 
-    with patch("app.assistant.intent.configure_llm"), \
-         patch("app.assistant.intent.LlamaSettings") as mock_settings:
+    with patch("app.agent.intent.configure_llm"), \
+         patch("app.agent.intent.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "ASSISTANT_META"
         result = classify_intent(question)
 
@@ -37,8 +37,8 @@ def test_meta_question_classified_as_assistant_meta():
 def test_sports_question_classified_as_out_of_scope():
     question = "Who won the football match yesterday?"
 
-    with patch("app.assistant.intent.configure_llm"), \
-         patch("app.assistant.intent.LlamaSettings") as mock_settings:
+    with patch("app.agent.intent.configure_llm"), \
+         patch("app.agent.intent.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "OUT_OF_SCOPE"
         result = classify_intent(question)
 
@@ -48,8 +48,8 @@ def test_sports_question_classified_as_out_of_scope():
 def test_noisy_llm_output_is_parsed_correctly():
     question = "When must KYC be refreshed for elevated-risk clients?"
 
-    with patch("app.assistant.intent.configure_llm"), \
-         patch("app.assistant.intent.LlamaSettings") as mock_settings:
+    with patch("app.agent.intent.configure_llm"), \
+         patch("app.agent.intent.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "  RAG_QUERY.  "
         result = classify_intent(question)
 
@@ -59,8 +59,8 @@ def test_noisy_llm_output_is_parsed_correctly():
 def test_unknown_label_defaults_to_rag_query():
     question = "Explain the transfer review procedure"
 
-    with patch("app.assistant.intent.configure_llm"), \
-         patch("app.assistant.intent.LlamaSettings") as mock_settings:
+    with patch("app.agent.intent.configure_llm"), \
+         patch("app.agent.intent.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = "BANANA"
         result = classify_intent(question)
 

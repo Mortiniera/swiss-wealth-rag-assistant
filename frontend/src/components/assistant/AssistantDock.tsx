@@ -31,10 +31,12 @@ export function AssistantDock({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[0.875rem] font-semibold text-brand">Assistant</h2>
-            <Badge>Policy</Badge>
+            <Badge>{clientContext ? "Ops" : "Policy"}</Badge>
           </div>
           <p className="mt-0.5 text-[0.6875rem] text-ink-tertiary">
-            Grounded answers · verify sources
+            {clientContext
+              ? "Case triage · policy-backed"
+              : "Grounded answers · verify sources"}
           </p>
         </div>
         <Button

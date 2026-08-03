@@ -64,9 +64,49 @@ def _format_history(history: list[ChatMessage]) -> str:
     return "\n".join(lines)
 
 
-def _build_prompt(question: str, context: str, history: list[ChatMessage]) -> str:
+def _build_prompt(
+    question: str,
+    context: str,
+    history: list[ChatMessage],
+    *,
+    has_structured_facts: bool = False,
+) -> str:
     """Build a grounded prompt over Helvetia internal policy context."""
-    return f"""
+    if has_structured_facts:
+        shape = f"""
+You are Helvetia's internal operations assistant helping an RM or ops specialist
+at the desk. Answer using ONLY the structured client facts and policy context below.
+Do not use outside knowledge. Do not invent client facts, rules, figures, SLAs,
+thresholds, roles, or outcomes that are not explicitly stated.
+
+Answer shape (case triage — follow this order):
+1. Lead with the strongest client-specific match(es) from structured facts
+   (e.g. KYC expired / refresh due, active account restriction, a concrete
+   pending or unusual transaction, and/or an open service request). If more than
+   one primary signal applies, say so in one clear opening. Name the client; do
+   not re-announce their CLI code if the question already implies a selected client.
+2. Support with 1–2 short policy sentences and cite them with [n] immediately after
+   the clause they support. Do not dump the full list of possible triggers in prose.
+3. Then a short "Also check" bullet list (3–5 one-liners) for other policy triggers
+   not yet evidenced in structured facts (e.g. amount vs 90-day pattern, beneficiary /
+   jurisdiction). Do not re-list blockers already covered by primary signals. If facts
+   say there are no transactions, no pending outbound, or no open service requests,
+   do not invent them — say so clearly. If a lookup failed, say so; do not invent
+   presence or absence.
+4. Voice: natural ops English. Write "pending review", never snake_case enums like
+   pending_review or debit_block (say "debit block" if needed).
+5. Only add a longer "cannot be definitive" hedge when NO structured fact matches a
+   listed policy trigger. If KYC expiry / refresh-due, an active restriction, a
+   pending transaction, or an open service request matches a trigger, that is enough
+   for a clear "most likely" reason — do not bury it after a catalogue.
+
+Do not cite structured facts with [n] numbers — only policy sources.
+Do not reply with only a generic refusal if the context already explains related rules.
+Use this exact fallback only when the context is unrelated or gives no usable guidance:
+"{INSUFFICIENT_INFO_MESSAGE}"
+"""
+    else:
+        shape = f"""
 You are an internal operations assistant for Helvetia Private Bank AG.
 Answer the question using ONLY the internal policy/procedure context below.
 Do not use outside knowledge. Do not invent rules, figures, SLAs, thresholds,
@@ -77,6 +117,8 @@ When you use information from a source, cite it inline using the matching bracke
 number from the context labels, e.g. [1], [2]. Place each citation immediately
 after the sentence or clause it supports. Use only citation numbers that appear
 in the context.
+Prefer a short ranked answer over a long catalogue of every possible trigger.
+Write natural ops English (e.g. "pending review", not pending_review).
 
 When the context is relevant but incomplete for a full, exact answer to the user's
 request (missing a specific figure, client fact, approval outcome, or other detail):
@@ -84,19 +126,16 @@ request (missing a specific figure, client fact, approval outcome, or other deta
 2. Then explain clearly why that is not enough for a direct, definitive answer to
    *this* question.
 3. Then state what would be needed to answer explicitly — but ONLY inputs that the
-   policies themselves make relevant, or that the question clearly assumes
-   (for example: a numeric threshold if the policy refers to one without stating it;
-   this client's transfer pattern, KYC/document status, or account restrictions if
-   those appear as triggers; an Operations/Compliance decision if the procedure
-   assigns one). Do not invent systems, tools, limits, or data sources that are not
-   implied by the context. Do not speculate about future product features.
+   policies themselves make relevant, or that the question clearly assumes.
 Do not use this three-part pattern when the context already supports a complete answer.
 Do not reply with only a generic refusal if the context already explains related rules.
 
 Use this exact fallback sentence only when the context is unrelated or gives no
 usable guidance for the question at all:
 "{INSUFFICIENT_INFO_MESSAGE}"
+"""
 
+    return f"""{shape}
 Conversation history:
 {_format_history(history)}
 
@@ -114,6 +153,7 @@ def generate_answer(
     rewritten_query: str | None = None,
     *,
     role: str | None = None,
+    structured_facts: str | None = None,
 ) -> dict:
     """Retrieve active policies and generate a grounded answer (or abstain)."""
     start = time.perf_counter()
@@ -138,26 +178,41 @@ def generate_answer(
 
     chunks = [_hit_to_chunk(hit) for hit in hits]
 
-    # Abstain only when hybrid retrieval returns nothing (no RRF score floor yet).
+    # Abstain only when hybrid retrieval returns nothing and no tool facts exist.
     # When hits exist, the LLM may give a complete answer or a calibrated partial
     # answer (policy facts + why incomplete + policy-implied missing inputs).
-    if not chunks:
+    if not chunks and not structured_facts:
         logger.info("Fallback triggered (no retrieval hits)")
         return {
             "answer": INSUFFICIENT_INFO_MESSAGE,
             "sources": [],
         }
 
+    policy_block = _build_context(chunks) if chunks else "(No matching policy chunks.)"
+    if structured_facts:
+        context = (
+            f"Structured client facts:\n{structured_facts}\n\n"
+            f"Policy context:\n{policy_block}"
+        )
+    else:
+        context = policy_block
+
     configure_llm()
-    prompt = _build_prompt(question, _build_context(chunks), history)
+    prompt = _build_prompt(
+        question,
+        context,
+        history,
+        has_structured_facts=bool(structured_facts),
+    )
     response = LlamaSettings.llm.complete(prompt)
     elapsed = time.perf_counter() - start
 
     logger.info(
-        "Answer generated in %.2fs (sources=%d) (history=%d)",
+        "Answer generated in %.2fs (sources=%d) (history=%d) (tool_facts=%s)",
         elapsed,
         len(chunks),
         len(history),
+        bool(structured_facts),
     )
 
     return {

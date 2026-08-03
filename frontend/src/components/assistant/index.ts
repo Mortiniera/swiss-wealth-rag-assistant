@@ -1,6 +1,7 @@
 export { AssistantDock } from "./AssistantDock";
 export { ChatWindow } from "./ChatWindow";
 export { CitationChip } from "./CitationChip";
+export { EvidenceChips } from "./EvidenceChips";
 export { ExcerptModal } from "./ExcerptModal";
 export { ExamplePrompts } from "./ExamplePrompts";
 export { LoadingState } from "./LoadingState";

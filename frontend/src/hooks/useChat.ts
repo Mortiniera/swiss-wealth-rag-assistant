@@ -47,6 +47,7 @@ export function useChat(clientContext: SelectedClientContext | null = null) {
         role: "assistant",
         content: data.answer,
         sources: data.sources,
+        evidence: data.evidence ?? [],
         timestamp: nowIso(),
       };
       setMessages((prev) => [...prev, assistantMessage]);

@@ -45,11 +45,6 @@ Ingest policies (Compose): `docker compose exec api python scripts/ingest_polici
 
 ## Entity relationship diagram
 
-![Database ER diagram — v0.3](assets/database-schema-v0.3.png)
-
-<details>
-<summary>Mermaid source (editable)</summary>
-
 ```mermaid
 erDiagram
   roles ||--o{ employees : has
@@ -78,8 +73,6 @@ erDiagram
 
   knowledge_documents ||--o{ knowledge_chunks : contains
 ```
-
-</details>
 
 ## Stable demo codes
 

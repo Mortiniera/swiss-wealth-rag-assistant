@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from app.assistant.query_rewriter import rewrite_query
+from app.agent.query_rewriter import rewrite_query
 from app.models.schemas import ChatMessage
 
 
@@ -8,8 +8,8 @@ def test_empty_history_returns_original_question_without_llm_call():
 
     question = "Compare UBS and Pictet"
 
-    with patch("app.assistant.query_rewriter.configure_llm") as mock_configure_llm, \
-         patch("app.assistant.query_rewriter.LlamaSettings") as mock_settings:
+    with patch("app.agent.query_rewriter.configure_llm") as mock_configure_llm, \
+         patch("app.agent.query_rewriter.LlamaSettings") as mock_settings:
         
         result = rewrite_query(question, [])
         
@@ -27,8 +27,8 @@ def test_with_history_returns_rewritten_query():
     ]
     rewritten_query = "How does Pictet approach sustainable investing compared to UBS?"
 
-    with patch("app.assistant.query_rewriter.configure_llm"), \
-         patch("app.assistant.query_rewriter.LlamaSettings") as mock_settings:
+    with patch("app.agent.query_rewriter.configure_llm"), \
+         patch("app.agent.query_rewriter.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = f"  {rewritten_query}  "
         result = rewrite_query(question, history)
 
@@ -46,8 +46,8 @@ def test_empty_llm_response_fallsback_to_original_question():
         ChatMessage(role="assistant", content="UBS integrates ESG into as part of its investing strategy."),
     ]
 
-    with patch("app.assistant.query_rewriter.configure_llm"), \
-         patch("app.assistant.query_rewriter.LlamaSettings") as mock_settings:
+    with patch("app.agent.query_rewriter.configure_llm"), \
+         patch("app.agent.query_rewriter.LlamaSettings") as mock_settings:
         mock_settings.llm.complete.return_value.text = ""
         result = rewrite_query(question, history)
 
