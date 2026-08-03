@@ -53,6 +53,13 @@ def test_heuristic_pending_transfer():
     assert "get_recent_transactions" in picks
 
 
+def test_heuristic_awaiting_reply():
+    picks = heuristic_tools(
+        "The client emailed in and nobody replied — what's on the thread?"
+    )
+    assert "get_interaction_history" in picks
+
+
 def test_merge_empty_without_fallback_stays_empty():
     assert merge_tool_choices([], [], fallback_if_empty=False) == []
 

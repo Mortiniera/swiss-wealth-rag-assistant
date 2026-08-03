@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 from types import ModuleType
 
-from app.agent.nodes import fetch_profile, fetch_restrictions, fetch_service_requests, fetch_transactions
+from app.agent.nodes import (
+    fetch_interactions,
+    fetch_profile,
+    fetch_restrictions,
+    fetch_service_requests,
+    fetch_transactions,
+)
 from app.agent.state import AgentState
 
 logger = logging.getLogger(__name__)
@@ -15,6 +21,7 @@ _TOOL_MODULES: dict[str, ModuleType] = {
     "get_account_restrictions": fetch_restrictions,
     "get_recent_transactions": fetch_transactions,
     "get_open_service_requests": fetch_service_requests,
+    "get_interaction_history": fetch_interactions,
 }
 
 

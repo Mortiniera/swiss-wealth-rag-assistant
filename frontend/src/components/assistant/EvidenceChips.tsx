@@ -20,6 +20,9 @@ function toneFor(label: string, value: string): "neutral" | "warning" | "danger"
   if (l === "open sr") {
     return v.includes("none") ? "neutral" : "warning";
   }
+  if (l === "interaction" || l === "inbound") {
+    return v.includes("none") ? "neutral" : "warning";
+  }
   if (l === "transactions" && v.includes("none")) {
     return "neutral";
   }

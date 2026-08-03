@@ -14,6 +14,7 @@ TOOL_ALLOWLIST: tuple[str, ...] = (
     "get_account_restrictions",
     "get_recent_transactions",
     "get_open_service_requests",
+    "get_interaction_history",
 )
 
 MAX_TOOLS_PER_RUN = 3
@@ -64,6 +65,23 @@ def heuristic_tools(question: str) -> list[str]:
         )
     ):
         picks.append("get_open_service_requests")
+
+    if any(
+        token in q
+        for token in (
+            "interaction",
+            "email",
+            "call",
+            "note",
+            "awaiting reply",
+            "thread",
+            "complaint",
+            "inbound",
+            "nobody replied",
+            "no reply",
+        )
+    ):
+        picks.append("get_interaction_history")
 
     if any(
         token in q

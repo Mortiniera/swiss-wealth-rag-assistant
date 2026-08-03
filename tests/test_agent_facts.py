@@ -202,6 +202,66 @@ def test_evidence_open_sr_none_and_present():
     assert present[0]["value"] == "SRQ-SCEN-01 · aml review"
 
 
+def test_facts_and_evidence_interactions_empty_and_salient():
+    empty_facts = format_structured_facts(
+        [
+            {
+                "tool": "get_interaction_history",
+                "ok": True,
+                "data": {
+                    "interaction_count": 0,
+                    "interactions": [],
+                    "salient_interactions": [],
+                },
+            }
+        ]
+    )
+    assert empty_facts is not None
+    assert "none on file" in empty_facts
+    assert "Do not invent a complaint thread" in empty_facts
+
+    empty_evidence = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_interaction_history",
+                "ok": True,
+                "data": {
+                    "interaction_count": 0,
+                    "interactions": [],
+                    "salient_interactions": [],
+                },
+            }
+        ]
+    )
+    assert empty_evidence == [
+        {
+            "label": "Interaction",
+            "value": "none on file",
+            "source": "interaction_history",
+        }
+    ]
+
+    present = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_interaction_history",
+                "ok": True,
+                "data": {
+                    "interaction_count": 1,
+                    "salient_interactions": [
+                        {
+                            "channel": "email",
+                            "direction": "inbound",
+                            "status": "awaiting_reply",
+                        }
+                    ],
+                },
+            }
+        ]
+    )
+    assert present[0]["value"] == "email · inbound · awaiting reply"
+
+
 def test_failed_tools_yield_no_evidence():
     assert evidence_from_tool_results(
         [{"tool": "get_client_profile", "ok": False, "error": {"code": "not_found"}}]

@@ -14,7 +14,8 @@ export type EvidenceItem = {
     | "client_profile"
     | "account_restrictions"
     | "recent_transactions"
-    | "open_service_requests";
+    | "open_service_requests"
+    | "interaction_history";
 };
 
 export type AskResponse = {

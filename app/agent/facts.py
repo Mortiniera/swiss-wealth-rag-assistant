@@ -22,8 +22,10 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     restrictions_payload: dict[str, Any] | None = None
     transactions_payload: dict[str, Any] | None = None
     service_requests_payload: dict[str, Any] | None = None
+    interactions_payload: dict[str, Any] | None = None
     failed_txn_lookup = False
     failed_sr_lookup = False
+    failed_interaction_lookup = False
 
     for result in tool_results:
         tool = result.get("tool")
@@ -32,6 +34,9 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
             continue
         if tool == "get_open_service_requests" and not result.get("ok"):
             failed_sr_lookup = True
+            continue
+        if tool == "get_interaction_history" and not result.get("ok"):
+            failed_interaction_lookup = True
             continue
         if not result.get("ok"):
             continue
@@ -44,14 +49,18 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
             transactions_payload = data
         elif tool == "get_open_service_requests":
             service_requests_payload = data
+        elif tool == "get_interaction_history":
+            interactions_payload = data
 
     if (
         profile is None
         and restrictions_payload is None
         and transactions_payload is None
         and service_requests_payload is None
+        and interactions_payload is None
         and not failed_txn_lookup
         and not failed_sr_lookup
+        and not failed_interaction_lookup
     ):
         return None
 
@@ -171,6 +180,49 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
                         status=_humanize_status(req.get("status")),
                         priority=_humanize_status(req.get("priority")),
                         subject=(req.get("subject") or "n/a")[:120],
+                    )
+                )
+
+    if failed_interaction_lookup:
+        lines.append(
+            "Interaction lookup unavailable for this run — do not claim that "
+            "notes or emails exist or that none exist; say the lookup failed."
+        )
+    elif interactions_payload is not None:
+        total = int(interactions_payload.get("interaction_count") or 0)
+        salient = interactions_payload.get("salient_interactions") or []
+        if total == 0:
+            lines.append(
+                "Interactions: none on file for this client. "
+                "Do not invent a complaint thread, inbound email, or call note."
+            )
+        elif not salient:
+            newest = (interactions_payload.get("interactions") or [{}])[0]
+            lines.append(
+                "Interactions on file ({total}), but none are inbound or awaiting "
+                "reply (newest: {channel} {direction}, status={status}). "
+                "Do not invent an unanswered client message.".format(
+                    total=total,
+                    channel=_humanize_status(newest.get("channel")),
+                    direction=_humanize_status(newest.get("direction")),
+                    status=_humanize_status(newest.get("status")),
+                )
+            )
+        else:
+            for item in salient:
+                linked = item.get("related_request_code")
+                linked_bit = f", linked to {linked}" if linked else ""
+                primary.append(
+                    "Interaction ({channel} {direction}): status {status}, "
+                    "subject '{subject}'{linked} — cite this touchpoint; "
+                    "do not invent other notes.".format(
+                        channel=_humanize_status(item.get("channel")),
+                        direction=_humanize_status(item.get("direction")),
+                        status=_humanize_status(item.get("status")),
+                        subject=(item.get("subject") or item.get("summary") or "n/a")[
+                            :120
+                        ],
+                        linked=linked_bit,
                     )
                 )
 
@@ -304,6 +356,37 @@ def evidence_from_tool_results(
                             "label": "Open SR",
                             "value": f"{code} · {rtype}",
                             "source": "open_service_requests",
+                        }
+                    )
+
+        elif tool == "get_interaction_history":
+            salient = data.get("salient_interactions") or []
+            if int(data.get("interaction_count") or 0) == 0:
+                items.append(
+                    {
+                        "label": "Interaction",
+                        "value": "none on file",
+                        "source": "interaction_history",
+                    }
+                )
+            elif not salient:
+                items.append(
+                    {
+                        "label": "Inbound",
+                        "value": "none awaiting reply",
+                        "source": "interaction_history",
+                    }
+                )
+            else:
+                for item in salient[:3]:
+                    channel = _humanize_status(item.get("channel"))
+                    direction = _humanize_status(item.get("direction"))
+                    status = _humanize_status(item.get("status"))
+                    items.append(
+                        {
+                            "label": "Interaction",
+                            "value": f"{channel} · {direction} · {status}",
+                            "source": "interaction_history",
                         }
                     )
 

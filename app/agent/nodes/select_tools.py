@@ -33,6 +33,7 @@ Guidance:
 - Pending / delayed / outbound transfer → get_recent_transactions (and usually profile)
 - Account block / freeze / restriction → get_account_restrictions
 - Open AML / complaint / service request → get_open_service_requests
+- Complaint thread / email / call notes / awaiting reply → get_interaction_history
 - KYC / identity / document expiry → get_client_profile
 - Prefer at most 3 tools.
 
