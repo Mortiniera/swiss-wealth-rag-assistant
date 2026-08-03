@@ -31,6 +31,7 @@ Available tools:
 
 Guidance:
 - Pending / delayed / outbound transfer → get_recent_transactions (and usually profile)
+- Portfolio / holdings / AUM / allocation → get_account_summary
 - Account block / freeze / restriction → get_account_restrictions
 - Open AML / complaint / service request → get_open_service_requests
 - Complaint thread / email / call notes / awaiting reply → get_interaction_history

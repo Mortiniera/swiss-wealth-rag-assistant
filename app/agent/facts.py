@@ -19,16 +19,21 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     Empty transaction books are stated explicitly so the model does not invent them.
     """
     profile: dict[str, Any] | None = None
+    account_summary_payload: dict[str, Any] | None = None
     restrictions_payload: dict[str, Any] | None = None
     transactions_payload: dict[str, Any] | None = None
     service_requests_payload: dict[str, Any] | None = None
     interactions_payload: dict[str, Any] | None = None
+    failed_account_summary_lookup = False
     failed_txn_lookup = False
     failed_sr_lookup = False
     failed_interaction_lookup = False
 
     for result in tool_results:
         tool = result.get("tool")
+        if tool == "get_account_summary" and not result.get("ok"):
+            failed_account_summary_lookup = True
+            continue
         if tool == "get_recent_transactions" and not result.get("ok"):
             failed_txn_lookup = True
             continue
@@ -43,6 +48,8 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         data = result.get("data") or {}
         if tool == "get_client_profile":
             profile = data
+        elif tool == "get_account_summary":
+            account_summary_payload = data
         elif tool == "get_account_restrictions":
             restrictions_payload = data
         elif tool == "get_recent_transactions":
@@ -54,10 +61,12 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
 
     if (
         profile is None
+        and account_summary_payload is None
         and restrictions_payload is None
         and transactions_payload is None
         and service_requests_payload is None
         and interactions_payload is None
+        and not failed_account_summary_lookup
         and not failed_txn_lookup
         and not failed_sr_lookup
         and not failed_interaction_lookup
@@ -96,6 +105,53 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
             f"residency={profile.get('residency_country') or '?'}, "
             f"primary RM={rm}"
         )
+
+    if failed_account_summary_lookup:
+        lines.append(
+            "Account summary lookup unavailable for this run — do not claim that "
+            "holdings exist or that none exist; say the lookup failed."
+        )
+    elif account_summary_payload is not None:
+        holding_count = int(account_summary_payload.get("holding_count") or 0)
+        accounts = account_summary_payload.get("accounts") or []
+        if holding_count == 0:
+            lines.append(
+                "Account holdings: none on file for this client. "
+                "Do not invent portfolio positions or market values."
+            )
+        else:
+            for account in accounts:
+                holdings = account.get("holdings") or []
+                if not holdings:
+                    continue
+                total = account.get("holdings_market_value_total") or "?"
+                currency = (
+                    account.get("base_currency")
+                    or account.get("currency")
+                    or ""
+                )
+                as_of = account.get("portfolio_as_of") or "n/a"
+                lines.append(
+                    "Portfolio snapshot on {account} (as of {as_of}): "
+                    "{count} holding(s), total market value {total} {currency}.".format(
+                        account=account.get("account_code") or "?",
+                        as_of=as_of,
+                        count=len(holdings),
+                        total=total,
+                        currency=currency,
+                    )
+                )
+                for holding in holdings[:8]:
+                    lines.append(
+                        "- {symbol} ({name}): qty {qty}, "
+                        "market value {value} {ccy}".format(
+                            symbol=holding.get("asset_symbol") or "?",
+                            name=holding.get("asset_name") or "n/a",
+                            qty=holding.get("quantity") or "?",
+                            value=holding.get("market_value") or "?",
+                            ccy=holding.get("currency") or "",
+                        )
+                    )
 
     restrictions = (restrictions_payload or {}).get("restrictions") or []
     if restrictions:
@@ -283,6 +339,51 @@ def evidence_from_tool_results(
                         "source": "client_profile",
                     }
                 )
+
+        elif tool == "get_account_summary":
+            holding_count = int(data.get("holding_count") or 0)
+            if holding_count == 0:
+                items.append(
+                    {
+                        "label": "Holdings",
+                        "value": "none on file",
+                        "source": "account_summary",
+                    }
+                )
+            else:
+                accounts = data.get("accounts") or []
+                for account in accounts:
+                    holdings = account.get("holdings") or []
+                    if not holdings:
+                        continue
+                    total = account.get("holdings_market_value_total") or "?"
+                    currency = (
+                        account.get("base_currency")
+                        or account.get("currency")
+                        or ""
+                    )
+                    code = account.get("account_code") or "?"
+                    items.append(
+                        {
+                            "label": "Holdings",
+                            "value": (
+                                f"{code} · {len(holdings)} lines · "
+                                f"{total} {currency}".strip()
+                            ),
+                            "source": "account_summary",
+                        }
+                    )
+                    for holding in holdings[:3]:
+                        symbol = holding.get("asset_symbol") or "?"
+                        value = holding.get("market_value") or "?"
+                        ccy = holding.get("currency") or ""
+                        items.append(
+                            {
+                                "label": "Position",
+                                "value": f"{symbol} · {value} {ccy}".strip(),
+                                "source": "account_summary",
+                            }
+                        )
 
         elif tool == "get_account_restrictions":
             for restriction in data.get("restrictions") or []:

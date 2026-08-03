@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 TOOL_ALLOWLIST: tuple[str, ...] = (
     "get_client_profile",
+    "get_account_summary",
     "get_account_restrictions",
     "get_recent_transactions",
     "get_open_service_requests",
@@ -44,10 +45,27 @@ def heuristic_tools(question: str) -> list[str]:
     if any(
         token in q
         for token in (
+            "portfolio",
+            "holding",
+            "holdings",
+            "aum",
+            "allocation",
+            "performance",
+            "market value",
+            "custody",
+            "asset mix",
+            "what do they hold",
+        )
+    ):
+        picks.append("get_account_summary")
+
+    if any(
+        token in q
+        for token in (
             "restriction",
             "debit block",
             "freeze",
-            "hold",
+            "on hold",
             "blocked account",
         )
     ):

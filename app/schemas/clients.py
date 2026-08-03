@@ -94,6 +94,29 @@ class AccountOut(BaseModel):
     restrictions: list[RestrictionOut] = Field(default_factory=list)
 
 
+class HoldingOut(BaseModel):
+    """Single holding line in a custody portfolio."""
+
+    asset_symbol: str
+    asset_name: str
+    quantity: Decimal
+    market_value: Decimal
+    currency: str
+
+
+class AccountSummaryOut(BaseModel):
+    """Account snapshot with optional portfolio holdings."""
+
+    account_code: str
+    account_type: str
+    currency: str
+    status: str
+    portfolio_name: str | None = None
+    portfolio_as_of: datetime | None = None
+    base_currency: str | None = None
+    holdings: list[HoldingOut] = Field(default_factory=list)
+
+
 class TransactionOut(BaseModel):
     """Booked or pending movement on a client account."""
 

@@ -169,6 +169,64 @@ def test_evidence_empty_transactions_chip():
     ]
 
 
+def test_format_facts_empty_holdings_does_not_invent_positions():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_account_summary",
+                "ok": True,
+                "data": {
+                    "account_count": 0,
+                    "holding_count": 0,
+                    "accounts": [],
+                },
+            }
+        ]
+    )
+    assert facts is not None
+    assert "none on file" in facts
+    assert "Do not invent portfolio positions" in facts
+
+
+def test_evidence_account_summary_chips():
+    evidence = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_account_summary",
+                "ok": True,
+                "data": {
+                    "account_count": 1,
+                    "holding_count": 2,
+                    "accounts": [
+                        {
+                            "account_code": "ACC-SCEN-10",
+                            "base_currency": "CHF",
+                            "holdings_market_value_total": "298000.00",
+                            "holdings": [
+                                {
+                                    "asset_symbol": "NESN.SW",
+                                    "market_value": "210000.00",
+                                    "currency": "CHF",
+                                },
+                                {
+                                    "asset_symbol": "ROG.SW",
+                                    "market_value": "88000.00",
+                                    "currency": "CHF",
+                                },
+                            ],
+                        }
+                    ],
+                },
+            }
+        ]
+    )
+    assert evidence[0]["label"] == "Holdings"
+    assert "ACC-SCEN-10" in evidence[0]["value"]
+    assert any(
+        item["label"] == "Position" and "NESN.SW" in item["value"] for item in evidence
+    )
+
+
 def test_evidence_open_sr_none_and_present():
     none_chip = evidence_from_tool_results(
         [
@@ -266,3 +324,61 @@ def test_failed_tools_yield_no_evidence():
     assert evidence_from_tool_results(
         [{"tool": "get_client_profile", "ok": False, "error": {"code": "not_found"}}]
     ) == []
+
+
+def test_format_facts_empty_holdings_does_not_invent_positions():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_account_summary",
+                "ok": True,
+                "data": {
+                    "account_count": 0,
+                    "holding_count": 0,
+                    "accounts": [],
+                },
+            }
+        ]
+    )
+    assert facts is not None
+    assert "none on file" in facts
+    assert "Do not invent portfolio positions" in facts
+
+
+def test_evidence_account_summary_chips():
+    evidence = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_account_summary",
+                "ok": True,
+                "data": {
+                    "account_count": 1,
+                    "holding_count": 2,
+                    "accounts": [
+                        {
+                            "account_code": "ACC-SCEN-10",
+                            "base_currency": "CHF",
+                            "holdings_market_value_total": "298000.00",
+                            "holdings": [
+                                {
+                                    "asset_symbol": "NESN.SW",
+                                    "market_value": "210000.00",
+                                    "currency": "CHF",
+                                },
+                                {
+                                    "asset_symbol": "ROG.SW",
+                                    "market_value": "88000.00",
+                                    "currency": "CHF",
+                                },
+                            ],
+                        }
+                    ],
+                },
+            }
+        ]
+    )
+    assert evidence[0]["label"] == "Holdings"
+    assert "ACC-SCEN-10" in evidence[0]["value"]
+    assert any(
+        item["label"] == "Position" and "NESN.SW" in item["value"] for item in evidence
+    )

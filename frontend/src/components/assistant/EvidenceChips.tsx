@@ -26,6 +26,9 @@ function toneFor(label: string, value: string): "neutral" | "warning" | "danger"
   if (l === "transactions" && v.includes("none")) {
     return "neutral";
   }
+  if (l === "holdings" || l === "position") {
+    return v.includes("none") ? "neutral" : "info";
+  }
   return "neutral";
 }
 

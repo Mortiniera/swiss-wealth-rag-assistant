@@ -217,8 +217,30 @@ def test_run_tools_node_dispatches_selected_only():
     )
     with patch("app.agent.nodes.run_tools.fetch_transactions.run") as mock_txn, patch(
         "app.agent.nodes.run_tools.fetch_profile.run"
-    ) as mock_profile:
+    ) as mock_profile, patch(
+        "app.agent.nodes.run_tools.fetch_account_summary.run"
+    ) as mock_summary:
         run_tools(state)
 
     mock_txn.assert_called_once_with(state)
+    mock_profile.assert_not_called()
+    mock_summary.assert_not_called()
+
+
+def test_run_tools_node_dispatches_account_summary():
+    from app.agent.nodes.run_tools import run as run_tools
+
+    state = AgentState(
+        question="portfolio holdings?",
+        client_ref="CLI-SCEN-10",
+        selected_tools=["get_account_summary"],
+    )
+    with patch(
+        "app.agent.nodes.run_tools.fetch_account_summary.run"
+    ) as mock_summary, patch(
+        "app.agent.nodes.run_tools.fetch_profile.run"
+    ) as mock_profile:
+        run_tools(state)
+
+    mock_summary.assert_called_once_with(state)
     mock_profile.assert_not_called()

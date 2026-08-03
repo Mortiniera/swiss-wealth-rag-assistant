@@ -6,6 +6,7 @@ import logging
 from types import ModuleType
 
 from app.agent.nodes import (
+    fetch_account_summary,
     fetch_interactions,
     fetch_profile,
     fetch_restrictions,
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 _TOOL_MODULES: dict[str, ModuleType] = {
     "get_client_profile": fetch_profile,
+    "get_account_summary": fetch_account_summary,
     "get_account_restrictions": fetch_restrictions,
     "get_recent_transactions": fetch_transactions,
     "get_open_service_requests": fetch_service_requests,

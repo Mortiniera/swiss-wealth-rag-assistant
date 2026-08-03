@@ -53,6 +53,14 @@ def test_heuristic_pending_transfer():
     assert "get_recent_transactions" in picks
 
 
+def test_heuristic_portfolio_holdings():
+    picks = heuristic_tools(
+        "Why does the client's portfolio look weaker — what holdings are on file?"
+    )
+    assert "get_account_summary" in picks
+    assert "get_account_restrictions" not in picks
+
+
 def test_heuristic_awaiting_reply():
     picks = heuristic_tools(
         "The client emailed in and nobody replied — what's on the thread?"
