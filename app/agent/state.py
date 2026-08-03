@@ -17,8 +17,11 @@ class AgentState:
     question: str
     history: list[ChatMessage] = field(default_factory=list)
     role: str | None = None
+    actor_employee_code: str | None = None
+    client_ref: str | None = None
     intent: str | None = None
     rewritten_query: str | None = None
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
     answer: str | None = None
     sources: list[dict[str, Any]] = field(default_factory=list)
     status: AgentStatus = "running"

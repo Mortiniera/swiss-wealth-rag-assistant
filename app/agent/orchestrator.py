@@ -6,9 +6,11 @@ import logging
 from collections.abc import Callable
 
 from app.agent import nodes
+from app.agent.client_ref import extract_client_ref
 from app.agent.routing import (
     END,
     STEP_CLASSIFY,
+    STEP_FETCH_PROFILE,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
@@ -35,6 +37,7 @@ NodeFn = Callable[[AgentState], None]
 
 NODES: dict[str, NodeFn] = {
     STEP_CLASSIFY: nodes.classify,
+    STEP_FETCH_PROFILE: nodes.fetch_profile,
     STEP_REWRITE: nodes.rewrite,
     STEP_GENERATE: nodes.generate,
     STEP_RESPOND_META: nodes.respond_meta,
@@ -62,16 +65,19 @@ def handle_question(
     history: list[ChatMessage] | None = None,
     *,
     role: str | None = None,
+    actor_employee_code: str | None = None,
 ) -> dict:
     """
     Run the bounded agent workflow for one question.
 
-    Public contract matches the previous linear orchestrator: ``{answer, sources}``.
+    Public contract: ``{answer, sources}``. Optional Act-as identity scopes tools.
     """
     state = AgentState(
         question=question,
         history=(history or [])[-MAX_HISTORY_TURNS:],
         role=role,
+        actor_employee_code=actor_employee_code,
+        client_ref=extract_client_ref(question),
     )
 
     for _ in range(MAX_STEPS):
@@ -97,8 +103,9 @@ def handle_question(
         state.error = f"Exceeded MAX_STEPS ({MAX_STEPS})"
 
     logger.info(
-        "Agent workflow finished: status=%s transitions=%s",
+        "Agent workflow finished: status=%s client_ref=%s transitions=%s",
         state.status,
+        state.client_ref,
         state.transitions,
     )
     return _finalize(state)

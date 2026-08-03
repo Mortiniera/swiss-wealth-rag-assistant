@@ -81,7 +81,13 @@ def ask(
             actor.employee_code if actor else None,
         )
         role = actor.role.code if actor is not None else None
-        result = handle_question(request.question, request.history, role=role)
+        actor_code = actor.employee_code if actor is not None else None
+        result = handle_question(
+            request.question,
+            request.history,
+            role=role,
+            actor_employee_code=actor_code,
+        )
         return AskResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

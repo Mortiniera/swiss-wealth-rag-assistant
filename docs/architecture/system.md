@@ -28,6 +28,7 @@ flowchart TB
   subgraph ask_path [Policy Q&A]
     Orchestrator[app.agent.orchestrator]
     Routing[app.agent.routing + nodes]
+    Tools[app.tools]
     Generator[app.rag.generator]
     Hybrid[app.retrieval<br/>vector + FTS + RRF]
     Policies[data/policies/]
@@ -48,7 +49,9 @@ flowchart TB
 
   CoreRouter --> Orchestrator
   Orchestrator --> Routing
+  Routing --> Tools
   Routing --> Generator
+  Tools --> PG
   Generator --> Hybrid
   Hybrid --> PG
   CoreRouter --> PolicyIngest
@@ -105,7 +108,8 @@ HTTP request
 ```text
 HTTP POST /ask
   → app/agent/orchestrator.py (bounded runner)
-  → app/agent/routing.py + nodes/ (classify → rewrite|meta|oos → generate)
+  → app/agent/routing.py + nodes/ (classify → fetch_profile? → rewrite|meta|oos → generate)
+  → app/tools/get_client_profile.py (when client_ref present)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)
   → PostgreSQL knowledge_* tables
