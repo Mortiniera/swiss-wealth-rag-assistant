@@ -1,4 +1,4 @@
-from app.assistant.orchestrator import handle_question
+from app.agent.orchestrator import handle_question
 from app.config import settings
 from app.database.session import SessionLocal
 from app.api.deps import get_optional_actor

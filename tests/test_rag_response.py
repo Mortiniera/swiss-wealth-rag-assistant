@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from app.assistant.intent import OUT_OF_SCOPE_MESSAGE
+from app.agent.intent import OUT_OF_SCOPE_MESSAGE
 from app.retrieval.types import RetrievalFilters, RetrievalHit
 
 FALLBACK = "I could not find enough information in the indexed sources to answer this confidently."
@@ -27,8 +27,8 @@ def _patch_ask(*, retrieve_return, rewritten=None):
     """Common patches so /ask tests never call OpenAI or Postgres."""
     rewritten = rewritten or "rewritten question"
     return (
-        patch("app.assistant.orchestrator.classify_intent", return_value="RAG_QUERY"),
-        patch("app.assistant.orchestrator.rewrite_query", return_value=rewritten),
+        patch("app.agent.orchestrator.classify_intent", return_value="RAG_QUERY"),
+        patch("app.agent.orchestrator.rewrite_query", return_value=rewritten),
         patch("app.rag.generator.retrieve_policies", return_value=retrieve_return),
         patch("app.rag.generator.SessionLocal", return_value=MagicMock()),
         patch("app.rag.generator.configure_llm"),
@@ -37,7 +37,7 @@ def _patch_ask(*, retrieve_return, rewritten=None):
 
 
 def test_out_of_scope_question_returns_refusal(client):
-    with patch("app.assistant.orchestrator.classify_intent", return_value="OUT_OF_SCOPE"), \
+    with patch("app.agent.orchestrator.classify_intent", return_value="OUT_OF_SCOPE"), \
          patch("app.rag.generator.retrieve_policies") as mock_retrieve:
         response = client.post("/ask", json={"question": "What is a protein?"})
     assert response.status_code == 200

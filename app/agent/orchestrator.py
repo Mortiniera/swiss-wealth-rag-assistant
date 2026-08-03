@@ -1,8 +1,8 @@
 from app.models.schemas import ChatMessage
 from app.rag.generator import generate_answer
-from app.assistant.query_rewriter import rewrite_query
+from app.agent.query_rewriter import rewrite_query
 
-from app.assistant.intent import (
+from app.agent.intent import (
     classify_intent,
     build_meta_response,
     build_out_of_scope_response,

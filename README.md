@@ -52,7 +52,7 @@ The React UI in `frontend/` is software-first (client book + policy catalog); `P
 ```
 ┌─────────┐     ┌──────────────┐     ┌──────────────┐
 │ Client  │────▶│   FastAPI    │────▶│ Orchestrator │
-│(UI/curl)│     │  POST /ask   │     │ (assistant/) │
+│(UI/curl)│     │  POST /ask   │     │ (agent/)     │
 └─────────┘     └──────────────┘     └──────┬───────┘
                                             │
                                             ▼
@@ -250,7 +250,7 @@ See `frontend/README.md` for frontend-specific setup.
 ```
 app/
   api/                 # FastAPI routes (core + clients)
-  assistant/           # Intent → rewrite → generate
+  agent/               # Intent → rewrite → generate
   retrieval/           # Hybrid pgvector + FTS + RRF
   rag/
     policy_registry.py # Load/validate data/policies
