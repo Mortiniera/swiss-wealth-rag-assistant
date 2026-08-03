@@ -109,7 +109,7 @@ HTTP request
 HTTP POST /ask
   → app/agent/orchestrator.py (bounded runner)
   → app/agent/routing.py + nodes/ (classify → fetch_profile? → fetch_restrictions? → rewrite|meta|oos → generate)
-  → app/tools (get_client_profile, get_account_restrictions, get_recent_transactions when client_ref present)
+  → app/tools (client profile, restrictions, transactions, open service requests when client_ref present)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)
   → PostgreSQL knowledge_* tables

@@ -10,7 +10,11 @@ export type Source = {
 export type EvidenceItem = {
   label: string;
   value: string;
-  source: "client_profile" | "account_restrictions" | "recent_transactions";
+  source:
+    | "client_profile"
+    | "account_restrictions"
+    | "recent_transactions"
+    | "open_service_requests";
 };
 
 export type AskResponse = {

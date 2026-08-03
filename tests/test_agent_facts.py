@@ -169,6 +169,39 @@ def test_evidence_empty_transactions_chip():
     ]
 
 
+def test_evidence_open_sr_none_and_present():
+    none_chip = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_open_service_requests",
+                "ok": True,
+                "data": {"open_count": 0, "open_requests": []},
+            }
+        ]
+    )
+    assert none_chip == [
+        {"label": "Open SR", "value": "none", "source": "open_service_requests"}
+    ]
+
+    present = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_open_service_requests",
+                "ok": True,
+                "data": {
+                    "open_requests": [
+                        {
+                            "request_code": "SRQ-SCEN-01",
+                            "request_type": "aml_review",
+                        }
+                    ],
+                },
+            }
+        ]
+    )
+    assert present[0]["value"] == "SRQ-SCEN-01 · aml review"
+
+
 def test_failed_tools_yield_no_evidence():
     assert evidence_from_tool_results(
         [{"tool": "get_client_profile", "ok": False, "error": {"code": "not_found"}}]

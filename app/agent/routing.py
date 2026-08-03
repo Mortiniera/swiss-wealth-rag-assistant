@@ -11,6 +11,7 @@ STEP_CLASSIFY = "classify"
 STEP_FETCH_PROFILE = "fetch_profile"
 STEP_FETCH_RESTRICTIONS = "fetch_restrictions"
 STEP_FETCH_TRANSACTIONS = "fetch_transactions"
+STEP_FETCH_SERVICE_REQUESTS = "fetch_service_requests"
 STEP_REWRITE = "rewrite"
 STEP_GENERATE = "generate"
 STEP_RESPOND_META = "respond_meta"
@@ -45,6 +46,9 @@ def next_step(state: AgentState) -> str:
         return STEP_FETCH_TRANSACTIONS
 
     if state.step == STEP_FETCH_TRANSACTIONS:
+        return STEP_FETCH_SERVICE_REQUESTS
+
+    if state.step == STEP_FETCH_SERVICE_REQUESTS:
         return STEP_REWRITE
 
     if state.step == STEP_REWRITE:

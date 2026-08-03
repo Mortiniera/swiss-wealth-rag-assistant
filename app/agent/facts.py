@@ -21,12 +21,17 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     profile: dict[str, Any] | None = None
     restrictions_payload: dict[str, Any] | None = None
     transactions_payload: dict[str, Any] | None = None
+    service_requests_payload: dict[str, Any] | None = None
     failed_txn_lookup = False
+    failed_sr_lookup = False
 
     for result in tool_results:
         tool = result.get("tool")
         if tool == "get_recent_transactions" and not result.get("ok"):
             failed_txn_lookup = True
+            continue
+        if tool == "get_open_service_requests" and not result.get("ok"):
+            failed_sr_lookup = True
             continue
         if not result.get("ok"):
             continue
@@ -37,12 +42,16 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
             restrictions_payload = data
         elif tool == "get_recent_transactions":
             transactions_payload = data
+        elif tool == "get_open_service_requests":
+            service_requests_payload = data
 
     if (
         profile is None
         and restrictions_payload is None
         and transactions_payload is None
+        and service_requests_payload is None
         and not failed_txn_lookup
+        and not failed_sr_lookup
     ):
         return None
 
@@ -136,6 +145,32 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
                         currency=txn.get("currency") or "",
                         status=_humanize_status(txn.get("status")),
                         delay=delay_bit,
+                    )
+                )
+
+    if failed_sr_lookup:
+        lines.append(
+            "Service-request lookup unavailable for this run — do not claim that "
+            "open cases exist or that none exist; say the lookup failed."
+        )
+    elif service_requests_payload is not None:
+        open_requests = service_requests_payload.get("open_requests") or []
+        if not open_requests:
+            lines.append(
+                "Open service requests: none on file. "
+                "Do not invent an open AML or ops case."
+            )
+        else:
+            for req in open_requests:
+                primary.append(
+                    "Open service request {code}: type {rtype}, status {status}, "
+                    "priority {priority}, subject '{subject}' — cite this case; "
+                    "do not invent other open requests.".format(
+                        code=req.get("request_code") or "?",
+                        rtype=_humanize_status(req.get("request_type")),
+                        status=_humanize_status(req.get("status")),
+                        priority=_humanize_status(req.get("priority")),
+                        subject=(req.get("subject") or "n/a")[:120],
                     )
                 )
 
@@ -249,5 +284,27 @@ def evidence_from_tool_results(
                                 "source": "recent_transactions",
                             }
                         )
+
+        elif tool == "get_open_service_requests":
+            open_requests = data.get("open_requests") or []
+            if not open_requests:
+                items.append(
+                    {
+                        "label": "Open SR",
+                        "value": "none",
+                        "source": "open_service_requests",
+                    }
+                )
+            else:
+                for req in open_requests[:3]:
+                    code = req.get("request_code") or "?"
+                    rtype = _humanize_status(req.get("request_type"))
+                    items.append(
+                        {
+                            "label": "Open SR",
+                            "value": f"{code} · {rtype}",
+                            "source": "open_service_requests",
+                        }
+                    )
 
     return items

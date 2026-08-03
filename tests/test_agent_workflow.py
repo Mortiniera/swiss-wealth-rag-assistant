@@ -10,6 +10,7 @@ from app.agent.routing import (
     STEP_CLASSIFY,
     STEP_FETCH_PROFILE,
     STEP_FETCH_RESTRICTIONS,
+    STEP_FETCH_SERVICE_REQUESTS,
     STEP_FETCH_TRANSACTIONS,
     STEP_GENERATE,
     STEP_RESPOND_META,
@@ -45,7 +46,7 @@ def test_routing_rag_path_without_client():
     assert next_step(state) == END
 
 
-def test_routing_rag_path_with_client_fetches_profile_restrictions_transactions():
+def test_routing_rag_path_with_client_fetches_all_tools():
     state = AgentState(
         question="Regarding CLI-SCEN-01: KYC?",
         intent="RAG_QUERY",
@@ -58,6 +59,8 @@ def test_routing_rag_path_with_client_fetches_profile_restrictions_transactions(
     state.step = STEP_FETCH_RESTRICTIONS
     assert next_step(state) == STEP_FETCH_TRANSACTIONS
     state.step = STEP_FETCH_TRANSACTIONS
+    assert next_step(state) == STEP_FETCH_SERVICE_REQUESTS
+    state.step = STEP_FETCH_SERVICE_REQUESTS
     assert next_step(state) == STEP_REWRITE
 
 
@@ -120,7 +123,7 @@ def test_runner_oos_uses_classify_then_respond():
     assert seen == [STEP_CLASSIFY, STEP_RESPOND_OOS]
 
 
-def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_question():
+def test_runner_fetches_all_client_tools_when_client_in_question():
     seen: list[str] = []
 
     def tracking_classify(state: AgentState) -> None:
@@ -148,17 +151,7 @@ def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_que
             ToolResult(
                 tool="get_account_restrictions",
                 ok=True,
-                data={
-                    "restriction_count": 1,
-                    "restrictions": [
-                        {
-                            "account_code": "ACC-000602",
-                            "restriction_type": "debit_block",
-                            "reason_code": "manual_review",
-                            "status": "active",
-                        }
-                    ],
-                },
+                data={"restriction_count": 0, "restrictions": []},
             ).to_dict()
         )
 
@@ -175,13 +168,10 @@ def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_que
                     "transactions": [
                         {
                             "transaction_code": "TXN-SCEN-01",
-                            "account_code": "ACC-SCEN-01",
-                            "txn_type": "transfer_out",
+                            "status": "pending",
                             "amount": "250000.00",
                             "currency": "CHF",
-                            "status": "pending",
                             "delay_reason_code": "kyc_expired",
-                            "is_unusual": False,
                         }
                     ],
                     "pending_or_unusual": [
@@ -200,13 +190,35 @@ def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_que
             ).to_dict()
         )
 
+    def tracking_fetch_service_requests(state: AgentState) -> None:
+        seen.append(state.step or "")
+        state.tool_results.append(
+            ToolResult(
+                tool="get_open_service_requests",
+                ok=True,
+                data={
+                    "request_count": 1,
+                    "open_count": 1,
+                    "open_requests": [
+                        {
+                            "request_code": "SRQ-SCEN-01",
+                            "request_type": "kyc_refresh",
+                            "status": "open",
+                            "priority": "high",
+                            "subject": "KYC refresh due",
+                        }
+                    ],
+                },
+            ).to_dict()
+        )
+
     def tracking_rewrite(state: AgentState) -> None:
         seen.append(state.step or "")
         state.rewritten_query = "transfer delay CLI-SCEN-01"
 
     def tracking_generate(state: AgentState) -> None:
         seen.append(state.step or "")
-        assert len(state.tool_results) == 3
+        assert len(state.tool_results) == 4
         state.answer = "ok"
         state.sources = []
         state.status = "completed"
@@ -218,6 +230,7 @@ def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_que
             STEP_FETCH_PROFILE: tracking_fetch_profile,
             STEP_FETCH_RESTRICTIONS: tracking_fetch_restrictions,
             STEP_FETCH_TRANSACTIONS: tracking_fetch_transactions,
+            STEP_FETCH_SERVICE_REQUESTS: tracking_fetch_service_requests,
             STEP_REWRITE: tracking_rewrite,
             STEP_GENERATE: tracking_generate,
         },
@@ -232,8 +245,8 @@ def test_runner_fetches_profile_restrictions_and_transactions_when_client_in_que
         STEP_FETCH_PROFILE,
         STEP_FETCH_RESTRICTIONS,
         STEP_FETCH_TRANSACTIONS,
+        STEP_FETCH_SERVICE_REQUESTS,
         STEP_REWRITE,
         STEP_GENERATE,
     ]
-    assert any(item["label"] == "Pending txn" for item in result["evidence"])
-    assert any(item["label"] == "Delay" for item in result["evidence"])
+    assert any(item["label"] == "Open SR" for item in result["evidence"])

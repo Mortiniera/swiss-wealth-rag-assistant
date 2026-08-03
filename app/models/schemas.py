@@ -58,6 +58,7 @@ class EvidenceItem(BaseModel):
         "client_profile",
         "account_restrictions",
         "recent_transactions",
+        "open_service_requests",
     ] = "client_profile"
 
 
