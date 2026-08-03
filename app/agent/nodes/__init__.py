@@ -3,6 +3,7 @@
 from app.agent.nodes.classify import run as classify
 from app.agent.nodes.fetch_profile import run as fetch_profile
 from app.agent.nodes.fetch_restrictions import run as fetch_restrictions
+from app.agent.nodes.fetch_transactions import run as fetch_transactions
 from app.agent.nodes.generate import run as generate
 from app.agent.nodes.respond_meta import run as respond_meta
 from app.agent.nodes.respond_oos import run as respond_oos
@@ -12,6 +13,7 @@ __all__ = [
     "classify",
     "fetch_profile",
     "fetch_restrictions",
+    "fetch_transactions",
     "rewrite",
     "generate",
     "respond_meta",

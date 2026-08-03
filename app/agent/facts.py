@@ -16,21 +16,34 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     Render ok tool payloads as an operator-salient facts block for the LLM.
 
     Failed tools are omitted here (still available on state for later UI/audit).
+    Empty transaction books are stated explicitly so the model does not invent them.
     """
     profile: dict[str, Any] | None = None
     restrictions_payload: dict[str, Any] | None = None
+    transactions_payload: dict[str, Any] | None = None
+    failed_txn_lookup = False
 
     for result in tool_results:
+        tool = result.get("tool")
+        if tool == "get_recent_transactions" and not result.get("ok"):
+            failed_txn_lookup = True
+            continue
         if not result.get("ok"):
             continue
-        tool = result.get("tool")
         data = result.get("data") or {}
         if tool == "get_client_profile":
             profile = data
         elif tool == "get_account_restrictions":
             restrictions_payload = data
+        elif tool == "get_recent_transactions":
+            transactions_payload = data
 
-    if profile is None and restrictions_payload is None:
+    if (
+        profile is None
+        and restrictions_payload is None
+        and transactions_payload is None
+        and not failed_txn_lookup
+    ):
         return None
 
     lines: list[str] = []
@@ -81,10 +94,56 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     elif restrictions_payload is not None:
         lines.append("Active account restrictions: none on file.")
 
+    if failed_txn_lookup:
+        lines.append(
+            "Transaction lookup unavailable for this run — do not claim that "
+            "transactions exist or that none exist; say the lookup failed."
+        )
+    elif transactions_payload is not None:
+        total = int(transactions_payload.get("transaction_count") or 0)
+        pending = transactions_payload.get("pending_or_unusual") or []
+        if total == 0:
+            lines.append(
+                "Recent transactions: none on file for this client. "
+                "Do not invent a pending outbound transfer. If the user asks why a "
+                "transfer is pending, say you do not see a pending outbound in the book."
+            )
+        elif not pending:
+            newest = (transactions_payload.get("transactions") or [{}])[0]
+            lines.append(
+                "Recent transactions on file ({total}), but none are pending, in review, "
+                "or flagged unusual (newest: {code} status={status}). "
+                "Do not invent a stuck transfer.".format(
+                    total=total,
+                    code=newest.get("transaction_code") or "n/a",
+                    status=_humanize_status(newest.get("status")),
+                )
+            )
+        else:
+            for txn in pending:
+                delay = txn.get("delay_reason_code")
+                delay_bit = (
+                    f", delay reason {_humanize_status(delay)}" if delay else ""
+                )
+                primary.append(
+                    "Pending or unusual transaction {code} on {account}: "
+                    "{txn_type} {amount} {currency}, status {status}{delay} — "
+                    "cite this concrete movement; do not invent other transfers.".format(
+                        code=txn.get("transaction_code") or "?",
+                        account=txn.get("account_code") or "?",
+                        txn_type=_humanize_status(txn.get("txn_type")),
+                        amount=txn.get("amount") or "?",
+                        currency=txn.get("currency") or "",
+                        status=_humanize_status(txn.get("status")),
+                        delay=delay_bit,
+                    )
+                )
+
     if primary:
         numbered = "\n".join(f"{i}. {text}" for i, text in enumerate(primary, start=1))
+        insert_at = 1 if profile is not None else 0
         lines.insert(
-            1 if profile is not None else 0,
+            insert_at,
             "Primary signal(s) — lead with these; if several apply, say so clearly:\n"
             + numbered,
         )
@@ -149,5 +208,46 @@ def evidence_from_tool_results(
                         "source": "account_restrictions",
                     }
                 )
+
+        elif tool == "get_recent_transactions":
+            pending = data.get("pending_or_unusual") or []
+            if int(data.get("transaction_count") or 0) == 0:
+                items.append(
+                    {
+                        "label": "Transactions",
+                        "value": "none on file",
+                        "source": "recent_transactions",
+                    }
+                )
+            elif not pending:
+                items.append(
+                    {
+                        "label": "Pending txn",
+                        "value": "none",
+                        "source": "recent_transactions",
+                    }
+                )
+            else:
+                for txn in pending[:3]:
+                    amount = txn.get("amount") or "?"
+                    currency = txn.get("currency") or ""
+                    status = _humanize_status(txn.get("status"))
+                    code = txn.get("transaction_code") or "?"
+                    items.append(
+                        {
+                            "label": "Pending txn",
+                            "value": f"{code} · {amount} {currency} · {status}".strip(),
+                            "source": "recent_transactions",
+                        }
+                    )
+                    delay = txn.get("delay_reason_code")
+                    if delay:
+                        items.append(
+                            {
+                                "label": "Delay",
+                                "value": _humanize_status(delay),
+                                "source": "recent_transactions",
+                            }
+                        )
 
     return items

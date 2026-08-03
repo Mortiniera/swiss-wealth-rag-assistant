@@ -14,6 +14,12 @@ function toneFor(label: string, value: string): "neutral" | "warning" | "danger"
   if (l === "restriction") {
     return "warning";
   }
+  if (l === "pending txn" || l === "delay") {
+    return v.includes("none") ? "neutral" : "warning";
+  }
+  if (l === "transactions" && v.includes("none")) {
+    return "neutral";
+  }
   return "neutral";
 }
 

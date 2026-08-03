@@ -111,6 +111,64 @@ def test_evidence_chips_from_profile_and_restrictions():
     )
 
 
+def test_format_facts_empty_transactions_does_not_invent_pending():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_client_profile",
+                "ok": True,
+                "data": {
+                    "client_code": "CLI-EMPTY",
+                    "full_name": "No Txn Client",
+                    "status": "active",
+                    "segment": "hnwi",
+                    "residency_country": "CH",
+                    "kyc_status": "valid",
+                    "kyc_document_type": "passport",
+                    "kyc_document_expiry": "2030-01-01",
+                    "primary_rm_name": "Elena Meier",
+                },
+            },
+            {
+                "tool": "get_recent_transactions",
+                "ok": True,
+                "data": {
+                    "transaction_count": 0,
+                    "returned_count": 0,
+                    "pending_or_unusual_count": 0,
+                    "transactions": [],
+                    "pending_or_unusual": [],
+                },
+            },
+        ]
+    )
+    assert facts is not None
+    assert "none on file" in facts
+    assert "Do not invent a pending outbound" in facts
+
+
+def test_evidence_empty_transactions_chip():
+    evidence = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_recent_transactions",
+                "ok": True,
+                "data": {
+                    "transaction_count": 0,
+                    "pending_or_unusual": [],
+                },
+            }
+        ]
+    )
+    assert evidence == [
+        {
+            "label": "Transactions",
+            "value": "none on file",
+            "source": "recent_transactions",
+        }
+    ]
+
+
 def test_failed_tools_yield_no_evidence():
     assert evidence_from_tool_results(
         [{"tool": "get_client_profile", "ok": False, "error": {"code": "not_found"}}]

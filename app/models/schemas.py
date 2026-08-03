@@ -54,7 +54,11 @@ class EvidenceItem(BaseModel):
 
     label: str
     value: str
-    source: Literal["client_profile", "account_restrictions"] = "client_profile"
+    source: Literal[
+        "client_profile",
+        "account_restrictions",
+        "recent_transactions",
+    ] = "client_profile"
 
 
 class AskResponse(BaseModel):
