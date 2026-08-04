@@ -20,6 +20,7 @@ export type {
   ClientPanelId,
   CommunicationPreference,
   EvidenceItem,
+  Holding,
   Interaction,
   KYCProfile,
   PanelLayout,

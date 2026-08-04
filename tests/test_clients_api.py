@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from uuid import uuid4
 
 import app.api.clients as clients_api
@@ -13,26 +14,36 @@ def test_list_clients_scenarios_only(client, monkeypatch):
     )
     monkeypatch.setattr(
         clients_api,
-        "build_client_out",
-        lambda _: {
-            "id": str(fake_id),
-            "client_code": "CLI-SCEN-01",
-            "full_name": "Helena Vogt",
-            "email": "scen.01@clients.helvetia.example",
-            "residency_country": "CH",
-            "status": "active",
-            "segment": "hnwi",
-            "household_code": None,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "kyc_profile": {"status": "expired", "document_type": "passport", "document_expiry": "2024-01-01"},
-            "suitability_profile": {"status": "complete", "risk_profile": "balanced"},
-            "communication_preference": None,
-            "primary_assignment": {
-                "employee_code": "EMP-0001",
-                "full_name": "Ada RM",
-                "email": "ada@helvetia.example",
-            },
-        },
+        "build_client_outs",
+        lambda _session, _clients: [
+            {
+                "id": str(fake_id),
+                "client_code": "CLI-SCEN-01",
+                "full_name": "Helena Vogt",
+                "email": "scen.01@clients.helvetia.example",
+                "residency_country": "CH",
+                "status": "active",
+                "segment": "hnwi",
+                "household_code": None,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "kyc_profile": {
+                    "status": "expired",
+                    "document_type": "passport",
+                    "document_expiry": "2024-01-01",
+                },
+                "suitability_profile": {
+                    "status": "complete",
+                    "risk_profile": "balanced",
+                },
+                "communication_preference": None,
+                "primary_assignment": {
+                    "employee_code": "EMP-0001",
+                    "full_name": "Ada RM",
+                    "email": "ada@helvetia.example",
+                },
+                "open_items": ["KYC expired", "Restriction", "Pending transfer"],
+            }
+        ],
     )
 
     response = client.get("/clients?scenarios_only=true")
@@ -40,17 +51,23 @@ def test_list_clients_scenarios_only(client, monkeypatch):
     body = response.json()
     assert len(body) == 1
     assert body[0]["client_code"] == "CLI-SCEN-01"
+    assert body[0]["open_items"][0] == "KYC expired"
 
 
 def test_get_client_returns_profile(client, monkeypatch):
-    fake_client = object()
     fake_id = uuid4()
+    fake_client = SimpleNamespace(id=fake_id)
 
     monkeypatch.setattr(clients_api, "_require_client", lambda *_: fake_client)
     monkeypatch.setattr(
         clients_api,
+        "open_item_signals_by_client_id",
+        lambda *_: {fake_id: ["Open SR"]},
+    )
+    monkeypatch.setattr(
+        clients_api,
         "build_client_out",
-        lambda _: {
+        lambda _client, open_items=None: {
             "id": str(fake_id),
             "client_code": "CLI-SCEN-01",
             "full_name": "Helena Vogt",
@@ -64,6 +81,7 @@ def test_get_client_returns_profile(client, monkeypatch):
             "suitability_profile": None,
             "communication_preference": None,
             "primary_assignment": None,
+            "open_items": open_items or [],
         },
     )
 
@@ -72,6 +90,7 @@ def test_get_client_returns_profile(client, monkeypatch):
     body = response.json()
     assert body["client_code"] == "CLI-SCEN-01"
     assert body["status"] == "active"
+    assert body["open_items"] == ["Open SR"]
 
 
 def test_get_client_not_found_returns_404(client, monkeypatch):
@@ -111,6 +130,18 @@ def test_get_client_accounts_returns_list(client, monkeypatch):
                         "notes": "KYC hold",
                     }
                 ],
+                "portfolio_name": "Custody book",
+                "portfolio_as_of": datetime.now(timezone.utc).isoformat(),
+                "base_currency": "CHF",
+                "holdings": [
+                    {
+                        "asset_symbol": "NESN.SW",
+                        "asset_name": "Nestlé",
+                        "quantity": "100",
+                        "market_value": "8500.00",
+                        "currency": "CHF",
+                    }
+                ],
             }
         ],
     )
@@ -120,6 +151,7 @@ def test_get_client_accounts_returns_list(client, monkeypatch):
     payload = response.json()
     assert len(payload) == 1
     assert payload[0]["account_code"] == "ACC-SCEN-01"
+    assert payload[0]["holdings"][0]["asset_symbol"] == "NESN.SW"
 
 
 def test_get_client_transactions_returns_list(client, monkeypatch):

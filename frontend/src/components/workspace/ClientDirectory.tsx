@@ -1,7 +1,9 @@
 import type { Client } from "../../api/client";
 import {
+  clientOpenItemList,
   clientOpenItems,
   formatLabel,
+  openItemTone,
 } from "../../utils/clientDisplay";
 import type { ColumnSort } from "../../utils/tableSort";
 import { Badge, ColumnHeader, DataTable, EmptyState } from "../ui";
@@ -114,7 +116,8 @@ export function ClientDirectory({
       {!loading && !error && clients.length > 0 && (
         <ul className="m-0 list-none p-0">
           {clients.map((client) => {
-            const openItem = clientOpenItems(client);
+            const openItems = clientOpenItemList(client);
+            const primary = clientOpenItems(client);
             return (
               <li key={client.id} className="m-0 border-b border-border last:border-b-0">
                 <button
@@ -137,11 +140,21 @@ export function ClientDirectory({
                   <span className="truncate self-center text-[0.8125rem] capitalize text-ink-secondary">
                     {formatLabel(client.suitability_profile?.risk_profile)}
                   </span>
-                  <span className="flex items-center self-center">
-                    {openItem === "—" ? (
+                  <span className="flex flex-wrap items-center gap-1.5 self-center">
+                    {openItems.length === 0 ? (
                       <span className="text-[0.8125rem] text-ink-tertiary">—</span>
                     ) : (
-                      <Badge tone="warning">{openItem}</Badge>
+                      <>
+                        <Badge tone={openItemTone(primary)}>{primary}</Badge>
+                        {openItems.length > 1 && (
+                          <span
+                            className="text-[0.6875rem] text-ink-tertiary"
+                            title={openItems.slice(1).join(" · ")}
+                          >
+                            +{openItems.length - 1}
+                          </span>
+                        )}
+                      </>
                     )}
                   </span>
                 </button>

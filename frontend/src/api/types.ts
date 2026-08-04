@@ -71,6 +71,8 @@ export type Client = {
   suitability_profile: SuitabilityProfile | null;
   communication_preference: CommunicationPreference | null;
   primary_assignment: PrimaryAssignment | null;
+  /** Priority-ordered directory signals from the API. */
+  open_items?: string[];
 };
 
 export type Restriction = {
@@ -82,6 +84,14 @@ export type Restriction = {
   notes: string | null;
 };
 
+export type Holding = {
+  asset_symbol: string;
+  asset_name: string;
+  quantity: string;
+  market_value: string;
+  currency: string;
+};
+
 export type Account = {
   id: string;
   account_code: string;
@@ -91,6 +101,10 @@ export type Account = {
   iban_synthetic: string;
   opened_at: string;
   restrictions: Restriction[];
+  portfolio_name?: string | null;
+  portfolio_as_of?: string | null;
+  base_currency?: string | null;
+  holdings?: Holding[];
 };
 
 export type Transaction = {

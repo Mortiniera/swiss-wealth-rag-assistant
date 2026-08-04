@@ -18,12 +18,14 @@ from app.schemas.clients import (
 from app.services.actor_read import actor_can_access_client, list_clients_for_actor
 from app.services.client_read import (
     build_client_out,
+    build_client_outs,
     get_client_by_ref,
     list_client_accounts,
     list_client_interactions,
     list_client_service_requests,
     list_client_transactions,
     list_clients,
+    open_item_signals_by_client_id,
 )
 
 router = APIRouter(prefix="/clients", tags=["clients"])
@@ -62,7 +64,7 @@ def get_clients(
         )
     else:
         clients = list_clients(session, scenarios_only=scenarios_only)
-    return [build_client_out(client) for client in clients]
+    return build_client_outs(session, clients)
 
 
 @router.get("/{client_ref}", response_model=ClientOut)
@@ -76,7 +78,8 @@ def get_client(
     ``client_ref`` accepts a UUID or stable ``client_code`` (e.g. ``CLI-SCEN-01``).
     """
     client = _require_client(session, client_ref, actor)
-    return build_client_out(client)
+    signals = open_item_signals_by_client_id(session, [client])
+    return build_client_out(client, open_items=signals.get(client.id, []))
 
 
 @router.get("/{client_ref}/accounts", response_model=list[AccountOut])
@@ -85,7 +88,7 @@ def get_client_accounts(
     session: Session = Depends(get_db),
     actor: Employee | None = Depends(get_optional_actor),
 ) -> list[AccountOut]:
-    """Return accounts for the client, including account-level restrictions."""
+    """Return accounts with restrictions and portfolio holdings."""
     client = _require_client(session, client_ref, actor)
     return list_client_accounts(session, client)
 

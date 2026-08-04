@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, listClients, type Client } from "../api/client";
 import {
+  clientOpenItemList,
   clientOpenItems,
   hasClientOpenItem,
 } from "../utils/clientDisplay";
@@ -146,7 +147,7 @@ export function useClients(actorCode: string | null = null) {
       rm: uniqueSorted(scoped.map(rmValue)),
       risk: uniqueSorted(scoped.map(riskValue)),
       openItem: uniqueSorted(
-        scoped.map(openItemValue).filter((value) => value !== "—"),
+        scoped.flatMap((client) => clientOpenItemList(client)),
       ),
     }),
     [scoped],
@@ -162,8 +163,8 @@ export function useClients(actorCode: string | null = null) {
       rows = rows.filter((client) => riskValue(client) === columnFilters.risk);
     }
     if (columnFilters.openItem !== "all") {
-      rows = rows.filter(
-        (client) => openItemValue(client) === columnFilters.openItem,
+      rows = rows.filter((client) =>
+        clientOpenItemList(client).includes(columnFilters.openItem),
       );
     }
 
@@ -175,7 +176,7 @@ export function useClients(actorCode: string | null = null) {
           client.full_name,
           rmValue(client),
           riskValue(client),
-          openItemValue(client),
+          ...clientOpenItemList(client),
         ]
           .join(" ")
           .toLowerCase();

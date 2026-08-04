@@ -43,7 +43,7 @@ def seed_scen_01(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 1, client, status="restricted")
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=1)
     make_kyc(
         session,
         client,
@@ -108,7 +108,7 @@ def seed_scen_02(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 2, client, status="restricted")
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=2)
     make_kyc(
         session,
         client,
@@ -162,7 +162,7 @@ def seed_scen_03(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 3, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=3)
     make_kyc(
         session,
         client,
@@ -217,7 +217,7 @@ def seed_scen_04(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 4, client, currency="EUR")
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=4)
     make_kyc(
         session,
         client,
@@ -277,12 +277,7 @@ def seed_scen_05(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 5, client, account_type="custody")
-    make_portfolio_with_holdings(
-        session,
-        account,
-        now=now,
-        holdings=[("CHF", "Swiss Franc Cash", "1000.0", "1000.00")],
-    )
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=5)
     make_kyc(
         session,
         client,
@@ -303,7 +298,7 @@ def seed_scen_06(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 6, client, currency="EUR")
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=6)
     make_kyc(
         session,
         client,
@@ -347,7 +342,7 @@ def seed_scen_07(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 7, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=7)
     make_kyc(
         session,
         client,
@@ -368,7 +363,7 @@ def seed_scen_08(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 8, client, currency="USD")
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=8)
     make_kyc(
         session,
         client,
@@ -401,15 +396,7 @@ def seed_scen_09(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 9, client, currency="EUR")
-    make_portfolio_with_holdings(
-        session,
-        account,
-        now=now,
-        holdings=[
-            ("VWRL.L", "Vanguard FTSE All-World", "80.0", "95000.00"),
-            ("CHF", "Swiss Franc Cash", "500.0", "500.00"),
-        ],
-    )
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=9)
     make_kyc(
         session,
         client,
@@ -430,16 +417,7 @@ def seed_scen_10(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 10, client)
-    make_portfolio_with_holdings(
-        session,
-        account,
-        now=now,
-        holdings=[
-            ("NESN.SW", "Nestle SA", "200.0", "210000.00"),
-            ("ROG.SW", "Roche Holding", "30.0", "88000.00"),
-            ("AGG", "iShares Core US Aggregate Bond", "400.0", "42000.00"),
-        ],
-    )
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=10)
     make_kyc(
         session,
         client,
@@ -483,7 +461,7 @@ def seed_scen_11(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 11, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=11)
     make_kyc(
         session,
         client,
@@ -527,7 +505,7 @@ def seed_scen_12(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 12, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=12)
     make_kyc(
         session,
         client,
@@ -578,7 +556,7 @@ def seed_scen_13(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 13, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=13)
     make_kyc(
         session,
         client,
@@ -633,7 +611,7 @@ def seed_scen_14(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 14, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=14)
     make_kyc(
         session,
         client,
@@ -677,7 +655,7 @@ def seed_scen_15(ctx: ScenarioContext) -> None:
     )
     assign_rm(session, client, rm)
     account = make_account(session, 15, client)
-    make_portfolio_with_holdings(session, account, now=now)
+    make_portfolio_with_holdings(session, account, now=now, scenario_n=15)
     make_kyc(
         session,
         client,

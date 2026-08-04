@@ -125,7 +125,7 @@ Policy-only questions skip the agent loop. Client-case questions (`client_ref` i
 
 | Feature | Description |
 | ------- | ----------- |
-| **Operations workspace** | Client directory, profile/KYC, accounts & restrictions, transactions, service requests, interactions, and policy catalog with a docked assistant. |
+| **Operations workspace** | Client directory (open-items: KYC / restrictions / pending transfers / SRs), profile/KYC, accounts with holdings, transactions, interactions, and policy catalog with a docked assistant. |
 | **Bounded ReAct agent (v0.7)** | Verify-then-answer loop: structured turns call client tools and/or policy search before generating a case triage response. |
 | **Evidence chips** | Book facts surfaced on answers (KYC, restrictions, pending txns, open SRs, interactions, holdings) — separate from policy source citations. |
 | **Demo Act-as identity** | Pick an employee (`X-Helvetia-Actor`); RM books are assigned-only; policies/`/ask` respect `allowed_roles`. Not login — full RBAC later. |
@@ -284,7 +284,7 @@ docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 1. Connect the GitHub repo; set deploy branch to `main`
 2. Set environment variables from `.env.example` (at minimum `OPENAI_API_KEY` and `DATABASE_URL` for hosted Postgres)
 3. Use the repo `Dockerfile` (migrate on start; leave Render Docker Command empty)
-4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh. With `AUTO_SEED=true` (default), an empty banking domain is seeded once. When seed scripts change (e.g. v0.7 restrictions), set `SEED_DATA_VERSION=7` on Render before deploy — the API truncates and reseeds the banking domain once on startup (no Render Shell required).
+4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh. With `AUTO_SEED=true` (default), an empty banking domain is seeded once. When seed scripts change (e.g. distinct scenario holdings), set `SEED_DATA_VERSION=8` on Render before deploy — the API truncates and reseeds the banking domain once on startup (no Render Shell required).
 
 **Frontend (Vercel)** — deploy the `frontend/` directory. Set `VITE_API_URL` to the Render API URL. Add the Vercel origin to CORS in `app/main.py`.
 

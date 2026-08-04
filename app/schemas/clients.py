@@ -66,6 +66,13 @@ class ClientOut(BaseModel):
     suitability_profile: SuitabilityProfileOut | None = None
     communication_preference: CommunicationPreferenceOut | None = None
     primary_assignment: PrimaryAssignmentOut | None = None
+    open_items: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Priority-ordered ops signals for the directory badge "
+            "(KYC, restriction, pending transfer, SLA / open SR)."
+        ),
+    )
 
 
 class RestrictionOut(BaseModel):
@@ -81,8 +88,18 @@ class RestrictionOut(BaseModel):
     notes: str | None = None
 
 
+class HoldingOut(BaseModel):
+    """Single holding line in a custody portfolio."""
+
+    asset_symbol: str
+    asset_name: str
+    quantity: Decimal
+    market_value: Decimal
+    currency: str
+
+
 class AccountOut(BaseModel):
-    """Client account with linked restrictions."""
+    """Client account with linked restrictions and optional holdings."""
 
     id: uuid.UUID
     account_code: str
@@ -92,16 +109,10 @@ class AccountOut(BaseModel):
     iban_synthetic: str
     opened_at: datetime
     restrictions: list[RestrictionOut] = Field(default_factory=list)
-
-
-class HoldingOut(BaseModel):
-    """Single holding line in a custody portfolio."""
-
-    asset_symbol: str
-    asset_name: str
-    quantity: Decimal
-    market_value: Decimal
-    currency: str
+    portfolio_name: str | None = None
+    portfolio_as_of: datetime | None = None
+    base_currency: str | None = None
+    holdings: list[HoldingOut] = Field(default_factory=list)
 
 
 class AccountSummaryOut(BaseModel):

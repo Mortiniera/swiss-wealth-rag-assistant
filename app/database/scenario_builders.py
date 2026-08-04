@@ -30,6 +30,87 @@ DEFAULT_HOLDINGS: list[tuple[str, str, str, str]] = [
     ("CHF", "Swiss Franc Cash", "25000.0", "25000.00"),
 ]
 
+# Per-scenario packs so curated books are visually distinct (not one cloned book).
+# Each tuple is ``(symbol, name, quantity, market_value)``.
+SCENARIO_HOLDINGS: dict[int, list[tuple[str, str, str, str]]] = {
+    1: [  # Helena — classic CH book, larger AUM under KYC hold
+        ("NESN.SW", "Nestle SA", "180.0", "276000.00"),
+        ("ROG.SW", "Roche Holding", "55.0", "168000.00"),
+        ("CHF", "Swiss Franc Cash", "42000.0", "42000.00"),
+    ],
+    2: [  # Marcus — equity + bond mix under compliance block
+        ("NESN.SW", "Nestle SA", "90.0", "138000.00"),
+        ("AGG", "iShares Core US Aggregate Bond", "600.0", "62000.00"),
+        ("CHF", "Swiss Franc Cash", "18000.0", "18000.00"),
+    ],
+    3: [
+        ("VWRL.L", "Vanguard FTSE All-World", "220.0", "248000.00"),
+        ("CHF", "Swiss Franc Cash", "35000.0", "35000.00"),
+    ],
+    4: [
+        ("ROG.SW", "Roche Holding", "70.0", "215000.00"),
+        ("NESN.SW", "Nestle SA", "40.0", "61000.00"),
+        ("CHF", "Swiss Franc Cash", "12000.0", "12000.00"),
+    ],
+    5: [  # Thin / placeholder book (story: limited holdings)
+        ("CHF", "Swiss Franc Cash", "1000.0", "1000.00"),
+    ],
+    6: [  # Noah — EUR custody (account currency EUR)
+        ("NESN.SW", "Nestle SA", "95.0", "145000.00"),
+        ("VWRL.L", "Vanguard FTSE All-World", "110.0", "124000.00"),
+        ("EUR", "Euro Cash", "28000.0", "28000.00"),
+    ],
+    7: [
+        ("AGG", "iShares Core US Aggregate Bond", "900.0", "94000.00"),
+        ("ROG.SW", "Roche Holding", "25.0", "76000.00"),
+        ("CHF", "Swiss Franc Cash", "22000.0", "22000.00"),
+    ],
+    8: [  # Luca — US residency / cross-border
+        ("AGG", "iShares Core US Aggregate Bond", "1200.0", "126000.00"),
+        ("VWRL.L", "Vanguard FTSE All-World", "60.0", "68000.00"),
+        ("USD", "US Dollar Cash", "15000.0", "15000.00"),
+    ],
+    9: [  # Sparse global ETF book
+        ("VWRL.L", "Vanguard FTSE All-World", "80.0", "95000.00"),
+        ("CHF", "Swiss Franc Cash", "500.0", "500.00"),
+    ],
+    10: [  # Portfolio performance enquiry — intentional Nestlé overweight
+        ("NESN.SW", "Nestle SA", "200.0", "210000.00"),
+        ("ROG.SW", "Roche Holding", "30.0", "88000.00"),
+        ("AGG", "iShares Core US Aggregate Bond", "400.0", "42000.00"),
+    ],
+    11: [
+        ("NESN.SW", "Nestle SA", "55.0", "84000.00"),
+        ("ROG.SW", "Roche Holding", "40.0", "122000.00"),
+        ("VWRL.L", "Vanguard FTSE All-World", "45.0", "51000.00"),
+        ("CHF", "Swiss Franc Cash", "9000.0", "9000.00"),
+    ],
+    12: [  # Theo — complaint thread; mid-size book
+        ("ROG.SW", "Roche Holding", "38.0", "116000.00"),
+        ("AGG", "iShares Core US Aggregate Bond", "350.0", "37000.00"),
+        ("CHF", "Swiss Franc Cash", "31000.0", "31000.00"),
+    ],
+    13: [
+        ("VWRL.L", "Vanguard FTSE All-World", "150.0", "169000.00"),
+        ("NESN.SW", "Nestle SA", "70.0", "107000.00"),
+        ("CHF", "Swiss Franc Cash", "19000.0", "19000.00"),
+    ],
+    14: [
+        ("AGG", "iShares Core US Aggregate Bond", "450.0", "47000.00"),
+        ("CHF", "Swiss Franc Cash", "88000.0", "88000.00"),
+    ],
+    15: [  # Iris — SLA breach; bond-heavy
+        ("AGG", "iShares Core US Aggregate Bond", "800.0", "84000.00"),
+        ("ROG.SW", "Roche Holding", "22.0", "67000.00"),
+        ("CHF", "Swiss Franc Cash", "45000.0", "45000.00"),
+    ],
+}
+
+
+def holdings_for_scenario(n: int) -> list[tuple[str, str, str, str]]:
+    """Return the curated holdings pack for ``CLI-SCEN-NN``."""
+    return list(SCENARIO_HOLDINGS.get(n, DEFAULT_HOLDINGS))
+
 
 def make_client(
     session: Session,
@@ -102,10 +183,13 @@ def make_portfolio_with_holdings(
     *,
     now: datetime,
     holdings: list[tuple[str, str, str, str]] | None = None,
+    scenario_n: int | None = None,
 ) -> Portfolio:
     """Insert one portfolio and holdings for the account.
 
     Each holding tuple is ``(symbol, name, quantity, market_value)``.
+    Prefer ``scenario_n`` so curated scenarios stay distinct; pass ``holdings``
+    only to override a pack explicitly.
     """
     portfolio = Portfolio(
         id=uuid.uuid4(),
@@ -117,7 +201,14 @@ def make_portfolio_with_holdings(
     session.add(portfolio)
     session.flush()
 
-    for symbol, name, qty, value in holdings or DEFAULT_HOLDINGS:
+    if holdings is not None:
+        pack = holdings
+    elif scenario_n is not None:
+        pack = holdings_for_scenario(scenario_n)
+    else:
+        pack = DEFAULT_HOLDINGS
+
+    for symbol, name, qty, value in pack:
         session.add(
             Holding(
                 id=uuid.uuid4(),

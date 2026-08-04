@@ -15,7 +15,8 @@ React UI for the Helvetia operations workspace. Structured client/policy surface
 
 - Operations shell: brand chrome, left nav rail, Act-as employee picker
 - Demo identity banner (`X-Helvetia-Actor`) — not login; real RBAC is a later release
-- Client directory with column sort/filter, profile/KYC, accounts & restrictions, transactions, service requests, and interactions
+- Client directory with column sort/filter, profile/KYC, accounts / restrictions / holdings, transactions, service requests, and interactions
+- Directory **open items** badge: KYC, restrictions, pending transfers, SLA / open SRs (priority + overflow count)
 - Role-driven client detail panel order from workspace API
 - Policies catalog with searchable list and policy detail reader (role-scoped when acting as)
 - Collapsible assistant dock with selected-client context, conversation thread, **evidence chips**, and policy source cards (expandable chunk metadata)

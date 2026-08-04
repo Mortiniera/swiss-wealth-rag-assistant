@@ -1,18 +1,41 @@
-/** Human-readable open-item signal for directory rows. */
+export type StatusTone = "neutral" | "info" | "warning" | "danger" | "success";
+
+/** Priority-ordered open-item signals for a directory row. */
+export function clientOpenItemList(client: {
+  open_items?: string[] | null;
+  kyc_profile: { status: string } | null;
+}): string[] {
+  if (client.open_items && client.open_items.length > 0) {
+    return client.open_items;
+  }
+  const kyc = client.kyc_profile?.status?.toLowerCase();
+  if (kyc === "expired") return ["KYC expired"];
+  if (kyc === "pending" || kyc === "in_review") return ["KYC pending"];
+  return [];
+}
+
+/** Primary open-item label for directory display / sort fallback. */
 export function clientOpenItems(client: {
+  open_items?: string[] | null;
   kyc_profile: { status: string } | null;
 }): string {
-  const kyc = client.kyc_profile?.status?.toLowerCase();
-  if (kyc === "expired") return "KYC expired";
-  if (kyc === "pending" || kyc === "in_review") return "KYC pending";
-  return "—";
+  return clientOpenItemList(client)[0] ?? "—";
 }
 
 /** True when the directory should treat the client as having an open ops item. */
 export function hasClientOpenItem(client: {
+  open_items?: string[] | null;
   kyc_profile: { status: string } | null;
 }): boolean {
-  return clientOpenItems(client) !== "—";
+  return clientOpenItemList(client).length > 0;
+}
+
+/** Badge tone for a directory open-item label. */
+export function openItemTone(label: string): StatusTone {
+  const value = label.toLowerCase();
+  if (value.includes("expired") || value.includes("sla")) return "danger";
+  if (value === "—") return "neutral";
+  return "warning";
 }
 
 export function formatLabel(value: string | null | undefined): string {
@@ -65,8 +88,6 @@ export function formatMoney(
     return `${numeric.toFixed(2)} ${currency ?? ""}`.trim();
   }
 }
-
-export type StatusTone = "neutral" | "info" | "warning" | "danger" | "success";
 
 /** Tone for compliance / account / ops status chips. */
 export function statusTone(status: string | null | undefined): StatusTone {
