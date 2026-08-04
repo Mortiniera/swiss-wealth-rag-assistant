@@ -15,19 +15,28 @@ React UI for the Helvetia operations workspace. Structured client/policy surface
 
 - Operations shell: brand chrome, left nav rail, Act-as employee picker
 - Demo identity banner (`X-Helvetia-Actor`) — not login; real RBAC is a later release
-- Client directory with column sort/filter, profile/KYC, accounts, transactions, service requests, and interactions
+- Client directory with column sort/filter, profile/KYC, accounts & restrictions, transactions, service requests, and interactions
 - Role-driven client detail panel order from workspace API
 - Policies catalog with searchable list and policy detail reader (role-scoped when acting as)
-- Collapsible assistant dock with selected-client context, conversation thread, and source cards
+- Collapsible assistant dock with selected-client context, conversation thread, **evidence chips**, and policy source cards (expandable chunk metadata)
+- Curated scenario prompts on selected clients (`CLI-SCEN-*`)
 - Error handling for API failures
 
 ## Screenshots
 
-![Client directory with Act-as banner](../docs/assets/ops-clients-directory.png)
+Production UI — [live demo](https://swiss-wealth-rag-assistant.vercel.app). Act as Elena Brunner (RM); open a curated scenario client and ask in the dock.
 
-![Client detail and docked assistant](../docs/assets/ops-client-rm-detail.png)
+![SCEN-01 — transfer triage with evidence chips](../docs/assets/ops-scen01-transfer-triage.png)
 
-![Policy detail reader](../docs/assets/ops-policy-detail.png)
+![SCEN-12 — complaint thread summary](../docs/assets/ops-scen12-complaint-thread.png)
+
+![SCEN-12 — policy source attribution](../docs/assets/ops-scen12-policy-sources.png)
+
+![SCEN-08 — cross-border interaction answer](../docs/assets/ops-scen08-cross-border.png)
+
+![SCEN-08 — policy detail from source chip](../docs/assets/ops-scen08-policy-detail.png)
+
+See [demo scenarios](../docs/demo-scenarios/scenarios.md) for all 15 packs and suggested prompts.
 
 ## Project structure
 
@@ -161,6 +170,17 @@ Content-Type: application/json
     source_file: string;
     chunk_id: string;
     score: number;
+  }[];
+  evidence?: {
+    label: string;
+    value: string;
+    source:
+      | "client_profile"
+      | "account_summary"
+      | "account_restrictions"
+      | "recent_transactions"
+      | "open_service_requests"
+      | "interaction_history";
   }[];
 }
 ```

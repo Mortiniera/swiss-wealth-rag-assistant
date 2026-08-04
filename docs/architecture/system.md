@@ -1,6 +1,6 @@
 # System Architecture
 
-**As of:** v0.4 incremental (Compose includes local frontend; pgvector-only knowledge path)
+**As of:** v0.7 (bounded ReAct agent + evidence chips; Compose includes local frontend)
 
 How the running application is wired: HTTP entrypoints, services, and data stores.
 
@@ -108,7 +108,7 @@ HTTP request
 ```text
 HTTP POST /ask
   → app/agent/orchestrator.py (bounded runner)
-  → app/agent/routing.py + nodes/ (classify → select_tools? → run_tools? → rewrite|meta|oos → generate)
+  → app/agent/routing.py + nodes/ (classify → agent_turn loop: call_tool | search_policies | finish → rewrite → generate)
   → app/tools (selected read-only client tools when client_ref present)
   → app/rag/generator.py
   → app/retrieval (vector + FTS + RRF, active filters)

@@ -1,6 +1,6 @@
 # Swiss Wealth RAG Assistant
 
-Internal **Helvetia Private Bank** operations workspace: browse structured clients and policies, then ask a docked policy assistant grounded on Postgres + pgvector. The backend classifies intent, rewrites follow-ups, runs hybrid retrieval (vector + FTS), and returns answers with source attribution.
+Internal **Helvetia Private Bank** operations workspace: browse structured clients and policies, then ask a docked assistant grounded on **client book facts + indexed policies**. The backend runs a bounded ReAct agent (verify assertions with read-only tools, search policies when needed, then generate), hybrid retrieval (vector + FTS + RRF), and returns answers with **evidence chips** and source attribution.
 
 The React UI in `frontend/` is software-first (client book + policy catalog); `POST /ask` powers the assistant panel with optional selected-client context.
 
@@ -15,17 +15,31 @@ The React UI in `frontend/` is software-first (client book + policy catalog); `P
 
 > On Render's free tier, the API may sleep after inactivity (cold start ~30–60s). If the hosted Postgres knowledge tables are empty, the API auto-ingests Helvetia policies on startup (`AUTO_INGEST=true`, requires `OPENAI_API_KEY`). If the banking domain has no employees, it auto-seeds synthetic clients (`AUTO_SEED=true`). Set `SEED_DATA_VERSION` on Render when seed scripts change so the next deploy truncates and reseeds the demo domain (no shell). Neon data persists across restarts, so cold starts do not re-embed unless the knowledge store is empty.
 
-### Operations UI
+### Operations UI (production)
 
-![Client directory — Act as Compliance, full book](docs/assets/ops-clients-directory.png)
+Screenshots from the [live demo](https://swiss-wealth-rag-assistant.vercel.app) — curated `CLI-SCEN-*` scenarios, Act-as RM identity.
 
-![Client detail — Act as RM, assigned book + docked assistant](docs/assets/ops-client-rm-detail.png)
+**SCEN-01 — expired KYC, account restriction, pending transfer triage.** The assistant verifies book facts (KYC hold, pending TXN-SCEN-01, open SRQ) and cites policy for why the transfer is in pending review.
 
-![Client detail — Compliance preference, expired KYC + grounded answer](docs/assets/ops-client-compliance-kyc.png)
+![SCEN-01 — transfer triage with evidence chips](docs/assets/ops-scen01-transfer-triage.png)
 
-![Client activity — transactions with selected-client assistant context](docs/assets/ops-client-transactions.png)
+**SCEN-12 — complaint thread and interaction history.** Open SRQ + inbound email awaiting reply; answer grounded on interaction log and complaint-handling policy.
 
-![Policy reader — Complaint Handling Procedure](docs/assets/ops-policy-detail.png)
+![SCEN-12 — complaint thread summary](docs/assets/ops-scen12-complaint-thread.png)
+
+**SCEN-12 — policy sources.** Retrieved chunks with department, document, and relevance score; expandable chunk metadata for audit.
+
+![SCEN-12 — policy source attribution](docs/assets/ops-scen12-policy-sources.png)
+
+**SCEN-08 — cross-border contact declined.** Assistant reads `cross_border_ok=false` from profile/comms and the logged interaction — no invented notes.
+
+![SCEN-08 — cross-border interaction answer](docs/assets/ops-scen08-cross-border.png)
+
+**SCEN-08 — policy reader modal.** Click a source chip to open the full policy document in the workspace reader.
+
+![SCEN-08 — policy detail from source chip](docs/assets/ops-scen08-policy-detail.png)
+
+See [demo scenarios](docs/demo-scenarios/scenarios.md) for all 15 curated client packs and suggested prompts.
 
 ## Stack
 
@@ -40,12 +54,20 @@ The React UI in `frontend/` is software-first (client book + policy catalog); `P
 
 ## How it works
 
-1. **Ingest policies** — Markdown under `data/policies/` is validated, chunked, embedded, and stored in `knowledge_*` tables (`POST /ingest` or `scripts/ingest_policies.py`).
-2. **Classify intent** — each message is routed as `RAG_QUERY`, `ASSISTANT_META`, or `OUT_OF_SCOPE`. Meta and out-of-scope questions skip retrieval.
-3. **Rewrite (RAG + history only)** — on follow-up turns, the question is expanded into a standalone retrieval query. First questions skip this step.
-4. **Retrieve** — hybrid search over active policies (pgvector + FTS, merged with RRF).
-5. **Generate** — if there are no hits, the API abstains (no LLM call). Otherwise the LLM answers from retrieved policy context and conversation history.
-6. **Respond** — the answer is returned with sources: department (in `institution`), document title, file, chunk ID, and score.
+**Policy-only questions** (no client selected): classify → rewrite (if history) → hybrid retrieve → generate → sources.
+
+**Client case questions** (client open in dock):
+
+1. **Classify intent** — `RAG_QUERY`, `ASSISTANT_META`, or `OUT_OF_SCOPE`.
+2. **Agent loop** (bounded ReAct) — planner chooses each turn: call a read-only client tool, `search_internal_policies`, or finish. Verifies what the user asserted (e.g. pending transfer, restriction) against book data before answering.
+3. **Client tools** — profile/KYC, account summary, restrictions, transactions, service requests, interaction history (Act-as scoped).
+4. **Policy search in loop** — hybrid retrieval when procedure/SLA/rules are needed; generate reuses those hits.
+5. **Rewrite + generate** — standalone retrieval query from history; LLM answers from structured facts + policy context.
+6. **Respond** — answer with **evidence chips** (book facts) and **sources** (policy chunks: department, title, chunk ID, score).
+
+**Ingest policies** — Markdown under `data/policies/` is validated, chunked, embedded, and stored in `knowledge_*` tables (`POST /ingest` or `scripts/ingest_policies.py`).
+
+**Seed domain** — synthetic clients and 15 curated scenarios in PostgreSQL (`scripts/seed_db.py` or `SEED_DATA_VERSION` on deploy).
 
 ## Architecture
 
@@ -82,14 +104,16 @@ The React UI in `frontend/` is software-first (client book + policy catalog); `P
 
 | Feature | Description |
 | ------- | ----------- |
-| **Operations workspace** | Client directory, client activity panels, and policy catalog with a docked assistant. |
+| **Operations workspace** | Client directory, profile/KYC, accounts & restrictions, transactions, service requests, interactions, and policy catalog with a docked assistant. |
+| **Bounded ReAct agent (v0.7)** | Verify-then-answer loop: structured turns call client tools and/or policy search before generating a case triage response. |
+| **Evidence chips** | Book facts surfaced on answers (KYC, restrictions, pending txns, open SRs, interactions, holdings) — separate from policy source citations. |
 | **Demo Act-as identity** | Pick an employee (`X-Helvetia-Actor`); RM books are assigned-only; policies/`/ask` respect `allowed_roles`. Not login — full RBAC later. |
-| **Selected-client context** | Opening a client tags the assistant dock; questions are enriched for retrieval. |
+| **Selected-client context** | Opening a client tags the assistant dock; the agent extracts `client_ref` and runs the tool loop. |
+| **Scenario prompts** | 15 curated `CLI-SCEN-*` packs with suggested operator questions in the UI. |
 | **Multi-turn conversation** | `POST /ask` accepts optional `history`; the UI sends prior turns on each message. |
-| **Query rewriting** | Follow-ups are rewritten into standalone retrieval queries before vector search. |
-| **Intent routing** | Wealth questions go to RAG; capability and off-topic queries skip retrieval. |
-| **Grounded answers** | RAG responses use retrieved chunks only; low-confidence retrieval abstains. |
-| **Source attribution** | Each answer includes department, document, chunk ID and relevance score. |
+| **Intent routing** | Wealth/case questions go to RAG + tools; capability and off-topic queries skip retrieval. |
+| **Grounded answers** | Responses use structured facts and retrieved policy chunks only; empty-book honesty (no invented pending transfers or tickets). |
+| **Source attribution** | Policy hits include department, document, chunk ID, RRF score; clickable in the UI policy reader. |
 
 ## Data corpus
 
