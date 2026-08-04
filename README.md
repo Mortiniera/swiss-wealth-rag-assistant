@@ -79,26 +79,47 @@ See [demo scenarios](docs/demo-scenarios/scenarios.md) for all 15 curated client
                                             │
                                             ▼
                                   ┌──────────────────┐
-                                  │ Intent Classifier │
+                                  │ Intent classifier │
                                   └────────┬─────────┘
                                            │
               ┌────────────────────────────┼────────────────────────────┐
               ▼                            ▼                            ▼
        ASSISTANT_META                 OUT_OF_SCOPE                   RAG_QUERY
        fixed response                 fixed response                       │
-                                                                           ▼
-                                                                  Query rewriter
-                                                                  (if history)
                                                                            │
-                                                                           ▼
-                                                              app.retrieval (hybrid)
-                                                                           │
-                                                                           ▼
-                                                              PostgreSQL + pgvector
-                                                                           │
-                                                                           ▼
-                                                               Generator → OpenAI
+                              ┌────────────────────────────────────────────┤
+                              │ no client_ref in question                  │ client_ref present
+                              ▼                                            ▼
+                     Query rewriter                              ┌─────────────────────┐
+                     (if history)                              │ Agent turn (ReAct)  │
+                              │                                │ call_tool | search  │
+                              │                                │ _policies | finish  │
+                              │                                └──────────┬──────────┘
+                              │                                           │
+                              │                    ┌──────────────────────┼──────────────────────┐
+                              │                    ▼                      ▼                      ▼
+                              │             run_tools              search_policies          finish
+                              │         (read-only client              │                      │
+                              │          tools → PostgreSQL)           ▼                      │
+                              │                    │            app.retrieval (hybrid)          │
+                              │                    │            PostgreSQL + pgvector           │
+                              │                    └──────── loop (max rounds) ────────────────┘
+                              │                                           │
+                              └───────────────────────┬───────────────────┘
+                                                      ▼
+                                             Query rewriter (if history)
+                                                      │
+                                                      ▼
+                                             Generator → OpenAI
+                                             (tool facts + policy hits;
+                                              retrieve at generate if
+                                              loop did not search policies)
+                                                      │
+                                                      ▼
+                                    answer + policy sources + evidence chips
 ```
+
+Policy-only questions skip the agent loop. Client-case questions (`client_ref` in the question or selected-client context) run the bounded ReAct loop before rewrite and generate. See [system architecture](docs/architecture/system.md) for the full runtime diagram.
 
 ## Capabilities
 

@@ -74,7 +74,7 @@ flowchart TB
 | `GET /`, `GET /health` | `app.api.routes` | — | — |
 | `POST /ingest` | `app.api.routes` | `app.rag.policy_ingest` | PostgreSQL + pgvector |
 | Policy ingest (CLI) | — | `scripts/ingest_policies.py` | PostgreSQL + pgvector |
-| `POST /ask` | `app.api.routes` | `app.agent.orchestrator` → hybrid retrieval → LLM | PostgreSQL + LLM |
+| `POST /ask` | `app.api.routes` | `app.agent.orchestrator` → classify → (agent loop \| rewrite) → generate | PostgreSQL + LLM |
 | `GET /actors` | `app.api.actors` | `app.services.actor_read` | PostgreSQL |
 | `GET /actors/{code}/workspace` | `app.api.actors` | `app.services.actor_read` | PostgreSQL |
 | `GET /clients` | `app.api.clients` | `app.services.client_read` / `actor_read` | PostgreSQL |
