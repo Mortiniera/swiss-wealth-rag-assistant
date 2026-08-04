@@ -148,6 +148,9 @@ def maybe_startup_ingest() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.observability import init_observability
+
+    init_observability()
     maybe_startup_seed()
     maybe_startup_ingest()
     yield

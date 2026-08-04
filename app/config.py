@@ -38,5 +38,10 @@ class Settings(BaseSettings):
     # If true, truncate and reseed the banking domain on every API startup.
     auto_reseed: bool = False
 
+    # Langfuse observability (optional — empty keys keep tracing disabled).
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = ""
+
 
 settings = Settings()
