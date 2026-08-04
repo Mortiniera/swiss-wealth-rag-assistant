@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from app.agent.tool_selection import TOOL_ALLOWLIST
+from app.agent.tool_selection import POLICY_TOOL_NAME, TOOL_ALLOWLIST
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +134,19 @@ def parse_turn_decision(
     if isinstance(tool, list):
         return None
     tool_name = str(tool or "").strip()
+    if tool_name == POLICY_TOOL_NAME:
+        policy_query = str(payload.get("policy_query") or "").strip()
+        if len(policy_query) < _MIN_POLICY_QUERY_LEN:
+            return None
+        if policy_query.lower() in searched:
+            return None
+        return TurnDecision(
+            action="call_tool",
+            tool=tool_name,
+            policy_query=policy_query,
+            reason_code=reason_code,
+        )
+
     if tool_name not in _TOOL_SET or tool_name in called:
         return None
 
@@ -158,6 +171,8 @@ def decision_from_fallback_tool(
             policy_query=None,
             reason_code="llm_fallback_finish",
         )
+    if tool_name == POLICY_TOOL_NAME:
+        return finish_decision("invalid_decision")
     return TurnDecision(
         action="call_tool",
         tool=tool_name,

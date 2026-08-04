@@ -34,6 +34,19 @@ def test_parse_search_policies_decision():
     assert decision.reason_code == "need_policy"
 
 
+def test_parse_search_internal_policies_as_call_tool():
+    from app.agent.tool_selection import POLICY_TOOL_NAME
+
+    decision = parse_turn_decision(
+        '{"action":"call_tool","tool":"search_internal_policies",'
+        '"policy_query":"KYC refresh cadence SLA","reason_code":"need_policy"}'
+    )
+    assert decision is not None
+    assert decision.action == "call_tool"
+    assert decision.tool == POLICY_TOOL_NAME
+    assert decision.policy_query == "KYC refresh cadence SLA"
+
+
 def test_parse_finish_decision():
     decision = parse_turn_decision(
         '{"action":"finish","tool":null,"reason_code":"enough_evidence"}'

@@ -8,7 +8,12 @@ from typing import Any
 from llama_index.core import Settings as LlamaSettings
 
 from app.agent.state import AgentState
-from app.agent.tool_selection import TOOL_ALLOWLIST, heuristic_tools
+from app.agent.tool_selection import (
+    CLIENT_TOOL_ALLOWLIST,
+    POLICY_TOOL_NAME,
+    TOOL_ALLOWLIST,
+    heuristic_tools,
+)
 from app.agent.turn_decision import (
     TurnDecision,
     decision_from_fallback_tool,
@@ -92,11 +97,17 @@ def _observation_digest(tool_results: list[dict[str, Any]], policy_queries: list
 
 
 def _build_turn_prompt(state: AgentState) -> str:
-    catalog = "\n".join(
-        f"- {name}: {_tool_purpose(name)}" for name in TOOL_ALLOWLIST
+    client_catalog = "\n".join(
+        f"- {name}: {_tool_purpose(name)}" for name in CLIENT_TOOL_ALLOWLIST
+    )
+    policy_catalog = (
+        f"- {POLICY_TOOL_NAME}: search indexed Helvetia policies "
+        "(set policy_query on call_tool, or use action=search_policies)"
     )
     already = ", ".join(state.tools_called) if state.tools_called else "(none)"
-    remaining = [name for name in TOOL_ALLOWLIST if name not in set(state.tools_called)]
+    remaining = [
+        name for name in CLIENT_TOOL_ALLOWLIST if name not in set(state.tools_called)
+    ]
     remaining_catalog = "\n".join(f"- {name}" for name in remaining) or "(none left)"
     searched = ", ".join(state.policy_queries) if state.policy_queries else "(none)"
     return f"""You are the turn planner for Helvetia's internal ops assistant.
@@ -114,28 +125,32 @@ Planning contract (general — apply to any question):
    checks that fact before finish. Do not finish while a central assertion is still unverified
    unless the verifying tool already ran (including empty/zero results) or failed.
 3. After verification, call additional client tools only if needed to answer the question.
-4. action=search_policies when procedure, SLA, thresholds, or policy rules are needed to
-   answer. Set policy_query to a focused search string (not the full user message).
-   Skip search_policies when verified facts alone answer the question — e.g. the user asked
-   why something is pending but transactions show none pending.
+4. Use {POLICY_TOOL_NAME} or action=search_policies when procedure, SLA, thresholds, or
+   policy rules are needed. Set policy_query to a focused search string.
+   Skip policy search when verified facts alone answer the question.
 5. action=finish when verified facts plus any policy context gathered are enough to answer
    honestly, including when an asserted fact is false or not on file.
 
 Rules:
-- action=call_tool: set tool to exactly ONE allowlisted name still available; policy_query null.
-- action=search_policies: set policy_query (min 3 chars); tool null. Do not repeat a query
-  already searched this run.
+- action=call_tool with a client tool: set tool to exactly ONE allowlisted client name still
+  available; policy_query null.
+- action=call_tool with {POLICY_TOOL_NAME}: set policy_query (min 3 chars); tool must be
+  {POLICY_TOOL_NAME}.
+- action=search_policies: set policy_query; tool null. Equivalent to {POLICY_TOOL_NAME}.
 - action=finish: set tool and policy_query to null.
 - Never invent tool names. Never return more than one action per turn.
 - Empty-book observations (zero rows) still count as verification — do not retry the same tool.
 
 Client tools (what each verifies):
-{catalog}
+{client_catalog}
 
-Still available:
+Policy tool:
+{policy_catalog}
+
+Client tools still available:
 {remaining_catalog}
 
-Already called: {already}
+Client tools already called: {already}
 Policy searches already run: {searched}
 
 Observations so far:
@@ -157,6 +172,7 @@ def _tool_purpose(name: str) -> str:
         "get_recent_transactions": "recent txns, pending/unusual outbound transfers",
         "get_open_service_requests": "open AML / complaint / ops service requests",
         "get_interaction_history": "emails, calls, notes, inbound threads",
+        POLICY_TOOL_NAME: "indexed policy/procedure search (requires policy_query)",
     }
     return purposes.get(name, "client lookup")
 
@@ -165,6 +181,13 @@ def _apply_decision(state: AgentState, decision: TurnDecision) -> None:
     state.last_decision = decision.to_dict()
     state.selected_tools = []
     state.policy_query = None
+
+    if decision.action == "call_tool" and decision.tool == POLICY_TOOL_NAME:
+        query = (decision.policy_query or "").strip()
+        if query:
+            state.policy_query = query
+            state.stop_reason = None
+            return
 
     if decision.action == "call_tool" and decision.tool:
         state.selected_tools = [decision.tool]

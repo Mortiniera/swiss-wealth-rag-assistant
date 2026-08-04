@@ -16,13 +16,26 @@ TOOL_ALLOWLIST: tuple[str, ...] = (
     "get_recent_transactions",
     "get_open_service_requests",
     "get_interaction_history",
+    "search_internal_policies",
 )
+
+CLIENT_TOOL_ALLOWLIST: tuple[str, ...] = (
+    "get_client_profile",
+    "get_account_summary",
+    "get_account_restrictions",
+    "get_recent_transactions",
+    "get_open_service_requests",
+    "get_interaction_history",
+)
+
+POLICY_TOOL_NAME = "search_internal_policies"
 
 MAX_TOOLS_PER_RUN = 3
 MAX_TOOLS_PER_ROUND = 1
 FALLBACK_TOOLS: tuple[str, ...] = ("get_client_profile",)
 
 _TOOL_SET = frozenset(TOOL_ALLOWLIST)
+_CLIENT_TOOL_SET = frozenset(CLIENT_TOOL_ALLOWLIST)
 
 
 def heuristic_tools(question: str) -> list[str]:
@@ -164,7 +177,7 @@ def normalize_selected_tools(
     seen: set[str] = set()
     ordered: list[str] = []
     for name in candidates:
-        if name not in _TOOL_SET or name in seen or name in excluded:
+        if name not in _CLIENT_TOOL_SET or name in seen or name in excluded:
             continue
         seen.add(name)
         ordered.append(name)
@@ -177,8 +190,8 @@ def normalize_selected_tools(
     ):
         ordered.insert(0, "get_client_profile")
 
-    # Stable allowlist order for inspectability.
-    ordered = [name for name in TOOL_ALLOWLIST if name in set(ordered)]
+    # Stable allowlist order for inspectability (client tools only).
+    ordered = [name for name in CLIENT_TOOL_ALLOWLIST if name in set(ordered)]
 
     if not ordered and fallback_if_empty:
         ordered = [name for name in FALLBACK_TOOLS if name not in excluded]

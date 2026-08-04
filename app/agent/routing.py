@@ -42,9 +42,7 @@ def next_step(state: AgentState) -> str:
         return STEP_REWRITE
 
     if state.step == STEP_AGENT_TURN:
-        decision = state.last_decision or {}
-        action = decision.get("action")
-        if action == "search_policies" and state.policy_query:
+        if state.policy_query:
             return STEP_SEARCH_POLICIES
         if not state.selected_tools:
             return STEP_REWRITE
