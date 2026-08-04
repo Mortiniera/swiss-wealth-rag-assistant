@@ -102,7 +102,15 @@ def test_get_client_accounts_returns_list(client, monkeypatch):
                 "status": "restricted",
                 "iban_synthetic": "CH93SCEN000000000001",
                 "opened_at": datetime.now(timezone.utc).isoformat(),
-                "restrictions": [],
+                "restrictions": [
+                    {
+                        "restriction_type": "kyc_hold",
+                        "reason_code": "kyc_expired",
+                        "status": "active",
+                        "effective_from": datetime.now(timezone.utc).isoformat(),
+                        "notes": "KYC hold",
+                    }
+                ],
             }
         ],
     )

@@ -60,6 +60,10 @@ function AccountRows({ items }: { items: Account[] }) {
                 </li>
               ))}
             </ul>
+          ) : account.status.toLowerCase() === "restricted" ? (
+            <p className="mt-2 mb-0 text-[0.75rem] text-ink-secondary">
+              Account flagged restricted — active restriction details not listed.
+            </p>
           ) : (
             <p className="mt-2 mb-0 text-[0.75rem] text-ink-tertiary">No restrictions</p>
           )}

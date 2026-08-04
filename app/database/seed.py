@@ -22,6 +22,7 @@ from app.database.models import (
     Interaction,
     KYCProfile,
     Portfolio,
+    Restriction,
     Role,
     ServiceRequest,
     SuitabilityProfile,
@@ -303,6 +304,48 @@ def _seed_transactions(
     return txn_seq - 1
 
 
+def _seed_restrictions(
+    session: Session,
+    rng: random.Random,
+    accounts: list[Account],
+    *,
+    now: datetime,
+) -> int:
+    """Insert active restriction rows for accounts flagged restricted."""
+    restriction_types = (
+        "debit_block",
+        "kyc_hold",
+        "compliance_block",
+        "manual_review",
+    )
+    reason_codes = (
+        "manual_review",
+        "aml_review",
+        "kyc_expired",
+        "ops_hold",
+    )
+    count = 0
+    for account in accounts:
+        if (account.status or "").lower() != "restricted":
+            continue
+        session.add(
+            Restriction(
+                id=uuid.uuid4(),
+                client_id=account.client_id,
+                account_id=account.id,
+                restriction_type=rng.choice(restriction_types),
+                reason_code=rng.choice(reason_codes),
+                status="active",
+                effective_from=now - timedelta(days=rng.randint(1, 120)),
+                effective_to=None,
+                notes="Synthetic restriction for restricted account status",
+            )
+        )
+        count += 1
+    session.flush()
+    return count
+
+
 def kyc_document_expiry_for_status(
     status: str,
     *,
@@ -522,6 +565,7 @@ def seed_database(
     _seed_assignments(session, rng, clients, rms)
 
     accounts = _seed_accounts(session, rng, clients)
+    restriction_count = _seed_restrictions(session, rng, accounts, now=now)
     _seed_portfolios_and_holdings(session, rng, accounts, now=now)
     txn_count = _seed_transactions(session, rng, accounts, now=now)
 
@@ -552,6 +596,7 @@ def seed_database(
         "clients": len(clients) + scenario_stats["scenario_clients"],
         "accounts": len(accounts) + scenario_stats["scenario_accounts"],
         "transactions": txn_count,
+        "restrictions": restriction_count,
         "service_requests": ops_stats["service_requests"],
         "interactions": ops_stats["interactions"],
         "scenario_clients": scenario_stats["scenario_clients"],

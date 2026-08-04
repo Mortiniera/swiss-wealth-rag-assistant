@@ -150,6 +150,16 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     elif account_summary_payload is not None:
         holding_count = int(account_summary_payload.get("holding_count") or 0)
         accounts = account_summary_payload.get("accounts") or []
+        for account in accounts:
+            code = account.get("account_code") or "?"
+            status = _humanize_status(account.get("status"))
+            if (account.get("status") or "").lower() == "restricted":
+                primary.append(
+                    f"Account {code} is marked restricted on file — verify holds, "
+                    "debit blocks, or compliance flags on this account."
+                )
+            else:
+                lines.append(f"Account {code}: status {status}.")
         if holding_count == 0:
             lines.append(
                 "Account holdings: none on file for this client. "
@@ -202,7 +212,20 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
                 "or manual review."
             )
     elif restrictions_payload is not None:
-        lines.append("Active account restrictions: none on file.")
+        restricted_accounts = [
+            account.get("account_code")
+            for account in (account_summary_payload or {}).get("accounts") or []
+            if (account.get("status") or "").lower() == "restricted"
+            and account.get("account_code")
+        ]
+        if restricted_accounts:
+            for code in restricted_accounts:
+                primary.append(
+                    f"Account {code} is marked restricted on file — verify holds, "
+                    "debit blocks, or compliance flags on this account."
+                )
+        else:
+            lines.append("Active account restrictions: none on file.")
 
     if failed_txn_lookup:
         lines.append(
@@ -213,17 +236,20 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         total = int(transactions_payload.get("transaction_count") or 0)
         pending = transactions_payload.get("pending_or_unusual") or []
         if total == 0:
-            lines.append(
+            primary.append(
                 "Recent transactions: none on file for this client. "
-                "Do not invent a pending outbound transfer. If the user asks why a "
-                "transfer is pending, say you do not see a pending outbound in the book."
+                "If the user asks why a transfer is pending, lead with that absence — "
+                "do not invent a pending outbound, and do not use KYC/suitability/"
+                "restriction gaps as a cause for a transfer that is not in the book."
             )
         elif not pending:
             newest = (transactions_payload.get("transactions") or [{}])[0]
-            lines.append(
-                "Recent transactions on file ({total}), but none are pending, in review, "
-                "or flagged unusual (newest: {code} status={status}). "
-                "Do not invent a stuck transfer.".format(
+            primary.append(
+                "No pending, in-review, or unusual outbound transfer is on file "
+                "({total} recent movement(s); newest {code} status={status}). "
+                "If the user asks why a transfer is pending, lead with that absence — "
+                "do not invent a stuck transfer, and do not invent a cause "
+                "(KYC, suitability, restriction, SLA) for one that is not evidenced.".format(
                     total=total,
                     code=newest.get("transaction_code") or "n/a",
                     status=_humanize_status(newest.get("status")),

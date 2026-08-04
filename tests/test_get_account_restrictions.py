@@ -52,6 +52,34 @@ def test_get_account_restrictions_happy_path():
     assert result.data["restrictions"][0]["restriction_type"] == "debit_block"
 
 
+def test_get_account_restrictions_account_status_without_rows():
+    session = MagicMock()
+    fake_client = object()
+    accounts = [
+        SimpleNamespace(
+            account_code="ACC-000602",
+            status="restricted",
+            restrictions=[],
+        )
+    ]
+    with patch(
+        "app.tools.get_account_restrictions.get_client_by_ref",
+        return_value=fake_client,
+    ), patch(
+        "app.tools.get_account_restrictions.list_client_accounts",
+        return_value=accounts,
+    ):
+        result = get_account_restrictions(
+            session,
+            GetAccountRestrictionsInput(client_ref="CLI-000238"),
+        )
+
+    assert result.ok is True
+    assert result.data["restriction_count"] == 1
+    assert result.data["restrictions"][0]["account_code"] == "ACC-000602"
+    assert result.data["restrictions"][0]["restriction_type"] == "account_status_restricted"
+
+
 def test_get_account_restrictions_forbidden():
     session = MagicMock()
     with patch(

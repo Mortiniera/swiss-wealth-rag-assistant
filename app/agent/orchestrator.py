@@ -10,13 +10,14 @@ from app.agent.client_ref import extract_client_ref
 from app.agent.facts import evidence_from_tool_results
 from app.agent.routing import (
     END,
+    STEP_AGENT_TURN,
     STEP_CLASSIFY,
     STEP_GENERATE,
     STEP_RESPOND_META,
     STEP_RESPOND_OOS,
     STEP_REWRITE,
     STEP_RUN_TOOLS,
-    STEP_SELECT_TOOLS,
+    STEP_SEARCH_POLICIES,
     next_step,
 )
 from app.agent.state import AgentState
@@ -25,8 +26,8 @@ from app.models.schemas import ChatMessage
 logger = logging.getLogger(__name__)
 
 MAX_HISTORY_TURNS = 10
-# classify + up to 5×(select+run) + rewrite + generate, with headroom.
-MAX_STEPS = 16
+# classify + up to 5×(turn+run) + finish turn + rewrite + generate, with headroom.
+MAX_STEPS = 18
 
 CONTROLLED_FAILURE = {
     "answer": (
@@ -41,8 +42,9 @@ NodeFn = Callable[[AgentState], None]
 
 NODES: dict[str, NodeFn] = {
     STEP_CLASSIFY: nodes.classify,
-    STEP_SELECT_TOOLS: nodes.select_tools,
+    STEP_AGENT_TURN: nodes.agent_turn,
     STEP_RUN_TOOLS: nodes.run_tools,
+    STEP_SEARCH_POLICIES: nodes.search_policies,
     STEP_REWRITE: nodes.rewrite,
     STEP_GENERATE: nodes.generate,
     STEP_RESPOND_META: nodes.respond_meta,

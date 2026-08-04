@@ -125,7 +125,9 @@ def list_client_accounts(session: Session, client: Client) -> list[AccountOut]:
             iban_synthetic=account.iban_synthetic,
             opened_at=account.opened_at,
             restrictions=[
-                RestrictionOut.model_validate(r) for r in account.restrictions
+                RestrictionOut.model_validate(r)
+                for r in account.restrictions
+                if (r.status or "").lower() == "active"
             ],
         )
         for account in accounts

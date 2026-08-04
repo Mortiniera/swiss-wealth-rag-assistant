@@ -191,7 +191,31 @@ def test_format_facts_empty_transactions_does_not_invent_pending():
     )
     assert facts is not None
     assert "none on file" in facts
-    assert "Do not invent a pending outbound" in facts
+    assert "do not invent a pending outbound" in facts
+    assert "Primary signal(s)" in facts
+
+
+def test_format_facts_booked_only_transactions_is_primary_absence():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_recent_transactions",
+                "ok": True,
+                "data": {
+                    "transaction_count": 2,
+                    "pending_or_unusual_count": 0,
+                    "transactions": [
+                        {"transaction_code": "TXN-1", "status": "booked"},
+                    ],
+                    "pending_or_unusual": [],
+                },
+            }
+        ]
+    )
+    assert facts is not None
+    assert "Primary signal(s)" in facts
+    assert "No pending" in facts
+    assert "do not invent a stuck transfer" in facts or "do not invent a cause" in facts
 
 
 def test_evidence_empty_transactions_chip():

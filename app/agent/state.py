@@ -9,7 +9,7 @@ from app.models.schemas import ChatMessage
 
 AgentStatus = Literal["running", "completed", "failed"]
 
-# Hard bound on select→run iterations within one /ask (overall MAX_STEPS is separate).
+# Hard bound on call_tool iterations within one /ask (overall MAX_STEPS is separate).
 DEFAULT_MAX_TOOL_ROUNDS = 5
 
 
@@ -24,9 +24,13 @@ class AgentState:
     client_ref: str | None = None
     intent: str | None = None
     selected_tools: list[str] = field(default_factory=list)
+    last_decision: dict[str, Any] | None = None
     rewritten_query: str | None = None
     tool_results: list[dict[str, Any]] = field(default_factory=list)
     tools_called: list[str] = field(default_factory=list)
+    policy_query: str | None = None
+    policy_queries: list[str] = field(default_factory=list)
+    policy_hits: list[dict[str, Any]] = field(default_factory=list)
     tool_round: int = 0
     max_tool_rounds: int = DEFAULT_MAX_TOOL_ROUNDS
     stop_reason: str | None = None

@@ -24,8 +24,8 @@ const GENERIC_POLICY_PROMPTS = [
 ];
 
 const GENERIC_CLIENT_PROMPTS = [
-  "Why is this client's outbound transfer still in pending review?",
-  "Does expired KYC explain a transfer hold for this client?",
+  "Are there any pending or unusual outbound transfers on file?",
+  "What KYC or suitability gaps should I be aware of for this client?",
   "What open service requests or interactions are on file?",
   "What account holdings or restrictions should I verify?",
 ];

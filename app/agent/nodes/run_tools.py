@@ -1,4 +1,4 @@
-"""Run the selected read-only client tools for the current ReAct round."""
+"""Run the selected read-only client tool for the current ReAct turn."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ _TOOL_MODULES: dict[str, ModuleType] = {
 
 
 def run(state: AgentState) -> None:
-    """Execute each selected tool once; record observation on state; advance round."""
+    """Execute the selected tool once; record observation; advance round."""
     if not state.client_ref:
         return
 
@@ -49,6 +49,7 @@ def run(state: AgentState) -> None:
     state.round_trace.append(
         {
             "round": state.tool_round,
+            "decision": state.last_decision,
             "selected": list(ran),
             "tools": [row.get("tool") for row in new_results],
             "ok": [bool(row.get("ok")) for row in new_results],
