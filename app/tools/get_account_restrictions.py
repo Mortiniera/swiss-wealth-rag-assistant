@@ -26,10 +26,12 @@ def _slim_restrictions(accounts) -> dict:
     """Flatten account restrictions into a compact payload for the agent."""
     active: list[dict] = []
     for account in accounts:
+        account_has_active_row = False
         for restriction in account.restrictions:
             status = (restriction.status or "").lower()
             if status != "active":
                 continue
+            account_has_active_row = True
             active.append(
                 {
                     "account_code": account.account_code,
@@ -42,6 +44,20 @@ def _slim_restrictions(accounts) -> dict:
                         if restriction.effective_from
                         else None
                     ),
+                }
+            )
+        account_status = (account.status or "").lower()
+        if not account_has_active_row and account_status == "restricted":
+            # Bulk seed and legacy rows can flag restricted on the account without
+            # a matching restrictions row — surface the account status for the agent.
+            active.append(
+                {
+                    "account_code": account.account_code,
+                    "account_status": account.status,
+                    "restriction_type": "account_status_restricted",
+                    "reason_code": "account_status_flag",
+                    "status": "active",
+                    "effective_from": None,
                 }
             )
     return {

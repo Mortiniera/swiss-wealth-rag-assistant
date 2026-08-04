@@ -12,14 +12,17 @@ from app.database.models import (
     Client,
     ClientAssignment,
     Interaction,
+    Portfolio,
     Restriction,
     ServiceRequest,
     Transaction,
 )
 from app.schemas.clients import (
     AccountOut,
+    AccountSummaryOut,
     ClientOut,
     CommunicationPreferenceOut,
+    HoldingOut,
     InteractionOut,
     KYCProfileOut,
     PrimaryAssignmentOut,
@@ -122,11 +125,54 @@ def list_client_accounts(session: Session, client: Client) -> list[AccountOut]:
             iban_synthetic=account.iban_synthetic,
             opened_at=account.opened_at,
             restrictions=[
-                RestrictionOut.model_validate(r) for r in account.restrictions
+                RestrictionOut.model_validate(r)
+                for r in account.restrictions
+                if (r.status or "").lower() == "active"
             ],
         )
         for account in accounts
     ]
+
+
+def list_client_account_summaries(
+    session: Session, client: Client
+) -> list[AccountSummaryOut]:
+    """Return accounts with portfolio holdings for account-summary tools."""
+    accounts = session.scalars(
+        select(Account)
+        .where(Account.client_id == client.id)
+        .options(selectinload(Account.portfolio).selectinload(Portfolio.holdings))
+        .order_by(Account.account_code)
+    ).all()
+
+    summaries: list[AccountSummaryOut] = []
+    for account in accounts:
+        portfolio = account.portfolio
+        holdings: list[HoldingOut] = []
+        if portfolio is not None:
+            holdings = [
+                HoldingOut(
+                    asset_symbol=row.asset_symbol,
+                    asset_name=row.asset_name,
+                    quantity=row.quantity,
+                    market_value=row.market_value,
+                    currency=row.currency,
+                )
+                for row in sorted(portfolio.holdings, key=lambda h: h.asset_symbol)
+            ]
+        summaries.append(
+            AccountSummaryOut(
+                account_code=account.account_code,
+                account_type=account.account_type,
+                currency=account.currency,
+                status=account.status,
+                portfolio_name=portfolio.name if portfolio else None,
+                portfolio_as_of=portfolio.as_of if portfolio else None,
+                base_currency=portfolio.base_currency if portfolio else None,
+                holdings=holdings,
+            )
+        )
+    return summaries
 
 
 def list_client_transactions(session: Session, client: Client) -> list[TransactionOut]:

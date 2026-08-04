@@ -85,6 +85,10 @@ Answer shape (case triage — follow this order):
    pending or unusual transaction, and/or an open service request). If more than
    one primary signal applies, say so in one clear opening. Name the client; do
    not re-announce their CLI code if the question already implies a selected client.
+   If structured facts say there is NO pending/in-review outbound transfer, that
+   absence is the lead when the user asks why a transfer is pending — say so first.
+   Do not invent a pending transfer, and do not reframe other gaps (suitability,
+   KYC, restrictions) as the reason a non-existent pending transfer is stuck.
 2. Support with 1–2 short policy sentences and cite them with [n] immediately after
    the clause they support. Do not dump the full list of possible triggers in prose.
 3. Then a short "Also check" bullet list (3–5 one-liners) for other policy triggers
@@ -92,13 +96,15 @@ Answer shape (case triage — follow this order):
    jurisdiction). Do not re-list blockers already covered by primary signals. If facts
    say there are no transactions, no pending outbound, or no open service requests,
    do not invent them — say so clearly. If a lookup failed, say so; do not invent
-   presence or absence.
+   presence or absence. Optional profile gaps may be mentioned as separate notes,
+   never as proof that a missing pending transfer exists.
 4. Voice: natural ops English. Write "pending review", never snake_case enums like
    pending_review or debit_block (say "debit block" if needed).
 5. Only add a longer "cannot be definitive" hedge when NO structured fact matches a
    listed policy trigger. If KYC expiry / refresh-due, an active restriction, a
    pending transaction, or an open service request matches a trigger, that is enough
-   for a clear "most likely" reason — do not bury it after a catalogue.
+   for a clear "most likely" reason — do not bury it after a catalogue. An absent
+   pending transfer is also definitive for "why is it pending?" questions.
 
 Do not cite structured facts with [n] numbers — only policy sources.
 Do not reply with only a generic refusal if the context already explains related rules.
@@ -154,29 +160,38 @@ def generate_answer(
     *,
     role: str | None = None,
     structured_facts: str | None = None,
+    policy_chunks: list[dict] | None = None,
 ) -> dict:
-    """Retrieve active policies and generate a grounded answer (or abstain)."""
+    """Retrieve active policies and generate a grounded answer (or abstain).
+
+    When ``policy_chunks`` is not ``None``, use those hits from the agent loop and
+    skip a second retrieval pass. ``None`` means retrieve now (RAG-only path or
+    client questions where the planner never called search_policies).
+    """
     start = time.perf_counter()
     history = history or []
     search_query = rewritten_query or question
 
     logger.info(
-        "Rewritten query=%r (original question=%r)",
+        "Rewritten query=%r (original question=%r) policy_from_loop=%s",
         search_query,
         question,
+        policy_chunks is not None,
     )
 
-    session = SessionLocal()
-    try:
-        hits = retrieve_policies(
-            session,
-            search_query,
-            filters=RetrievalFilters(status="active", role=role),
-        )
-    finally:
-        session.close()
-
-    chunks = [_hit_to_chunk(hit) for hit in hits]
+    if policy_chunks is not None:
+        chunks = list(policy_chunks)
+    else:
+        session = SessionLocal()
+        try:
+            hits = retrieve_policies(
+                session,
+                search_query,
+                filters=RetrievalFilters(status="active", role=role),
+            )
+        finally:
+            session.close()
+        chunks = [_hit_to_chunk(hit) for hit in hits]
 
     # Abstain only when hybrid retrieval returns nothing and no tool facts exist.
     # When hits exist, the LLM may give a complete answer or a calibrated partial

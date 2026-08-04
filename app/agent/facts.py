@@ -19,16 +19,21 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
     Empty transaction books are stated explicitly so the model does not invent them.
     """
     profile: dict[str, Any] | None = None
+    account_summary_payload: dict[str, Any] | None = None
     restrictions_payload: dict[str, Any] | None = None
     transactions_payload: dict[str, Any] | None = None
     service_requests_payload: dict[str, Any] | None = None
     interactions_payload: dict[str, Any] | None = None
+    failed_account_summary_lookup = False
     failed_txn_lookup = False
     failed_sr_lookup = False
     failed_interaction_lookup = False
 
     for result in tool_results:
         tool = result.get("tool")
+        if tool == "get_account_summary" and not result.get("ok"):
+            failed_account_summary_lookup = True
+            continue
         if tool == "get_recent_transactions" and not result.get("ok"):
             failed_txn_lookup = True
             continue
@@ -43,6 +48,8 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         data = result.get("data") or {}
         if tool == "get_client_profile":
             profile = data
+        elif tool == "get_account_summary":
+            account_summary_payload = data
         elif tool == "get_account_restrictions":
             restrictions_payload = data
         elif tool == "get_recent_transactions":
@@ -54,10 +61,12 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
 
     if (
         profile is None
+        and account_summary_payload is None
         and restrictions_payload is None
         and transactions_payload is None
         and service_requests_payload is None
         and interactions_payload is None
+        and not failed_account_summary_lookup
         and not failed_txn_lookup
         and not failed_sr_lookup
         and not failed_interaction_lookup
@@ -85,6 +94,42 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         elif kyc_raw:
             lines.append(f"KYC on file: {kyc} ({doc_type}, expiry {expiry}).")
 
+        suit_raw = (profile.get("suitability_status") or "").lower()
+        suit = _humanize_status(profile.get("suitability_status"))
+        risk = profile.get("suitability_risk_profile") or "n/a"
+        if suit_raw in {"missing", "outdated", "incomplete"}:
+            primary.append(
+                f"Suitability {suit} (risk profile {risk}) — cite this gap; "
+                "do not claim the questionnaire is complete."
+            )
+        elif suit_raw:
+            lines.append(f"Suitability on file: {suit} (risk profile {risk}).")
+        elif "suitability_status" in profile:
+            lines.append(
+                "Suitability profile: none on file. "
+                "Do not invent a completed questionnaire."
+            )
+
+        channel = profile.get("preferred_channel")
+        cross_border = profile.get("cross_border_ok")
+        language = profile.get("preferred_language")
+        if channel or cross_border is not None or language:
+            cross_bit = (
+                "unspecified"
+                if cross_border is None
+                else ("yes" if cross_border else "no")
+            )
+            lines.append(
+                f"Communication prefs: channel={channel or 'n/a'}, "
+                f"language={language or 'n/a'}, cross_border_ok={cross_bit}."
+            )
+            if cross_border is False:
+                primary.append(
+                    "Cross-border communication is not consented "
+                    f"(residency {profile.get('residency_country') or 'n/a'}) — "
+                    "do not recommend outbound contact that ignores this flag."
+                )
+
         rm = (
             profile.get("primary_rm_name")
             or profile.get("primary_rm_code")
@@ -96,6 +141,63 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
             f"residency={profile.get('residency_country') or '?'}, "
             f"primary RM={rm}"
         )
+
+    if failed_account_summary_lookup:
+        lines.append(
+            "Account summary lookup unavailable for this run — do not claim that "
+            "holdings exist or that none exist; say the lookup failed."
+        )
+    elif account_summary_payload is not None:
+        holding_count = int(account_summary_payload.get("holding_count") or 0)
+        accounts = account_summary_payload.get("accounts") or []
+        for account in accounts:
+            code = account.get("account_code") or "?"
+            status = _humanize_status(account.get("status"))
+            if (account.get("status") or "").lower() == "restricted":
+                primary.append(
+                    f"Account {code} is marked restricted on file — verify holds, "
+                    "debit blocks, or compliance flags on this account."
+                )
+            else:
+                lines.append(f"Account {code}: status {status}.")
+        if holding_count == 0:
+            lines.append(
+                "Account holdings: none on file for this client. "
+                "Do not invent portfolio positions or market values."
+            )
+        else:
+            for account in accounts:
+                holdings = account.get("holdings") or []
+                if not holdings:
+                    continue
+                total = account.get("holdings_market_value_total") or "?"
+                currency = (
+                    account.get("base_currency")
+                    or account.get("currency")
+                    or ""
+                )
+                as_of = account.get("portfolio_as_of") or "n/a"
+                lines.append(
+                    "Portfolio snapshot on {account} (as of {as_of}): "
+                    "{count} holding(s), total market value {total} {currency}.".format(
+                        account=account.get("account_code") or "?",
+                        as_of=as_of,
+                        count=len(holdings),
+                        total=total,
+                        currency=currency,
+                    )
+                )
+                for holding in holdings[:8]:
+                    lines.append(
+                        "- {symbol} ({name}): qty {qty}, "
+                        "market value {value} {ccy}".format(
+                            symbol=holding.get("asset_symbol") or "?",
+                            name=holding.get("asset_name") or "n/a",
+                            qty=holding.get("quantity") or "?",
+                            value=holding.get("market_value") or "?",
+                            ccy=holding.get("currency") or "",
+                        )
+                    )
 
     restrictions = (restrictions_payload or {}).get("restrictions") or []
     if restrictions:
@@ -110,7 +212,20 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
                 "or manual review."
             )
     elif restrictions_payload is not None:
-        lines.append("Active account restrictions: none on file.")
+        restricted_accounts = [
+            account.get("account_code")
+            for account in (account_summary_payload or {}).get("accounts") or []
+            if (account.get("status") or "").lower() == "restricted"
+            and account.get("account_code")
+        ]
+        if restricted_accounts:
+            for code in restricted_accounts:
+                primary.append(
+                    f"Account {code} is marked restricted on file — verify holds, "
+                    "debit blocks, or compliance flags on this account."
+                )
+        else:
+            lines.append("Active account restrictions: none on file.")
 
     if failed_txn_lookup:
         lines.append(
@@ -121,17 +236,20 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         total = int(transactions_payload.get("transaction_count") or 0)
         pending = transactions_payload.get("pending_or_unusual") or []
         if total == 0:
-            lines.append(
+            primary.append(
                 "Recent transactions: none on file for this client. "
-                "Do not invent a pending outbound transfer. If the user asks why a "
-                "transfer is pending, say you do not see a pending outbound in the book."
+                "If the user asks why a transfer is pending, lead with that absence — "
+                "do not invent a pending outbound, and do not use KYC/suitability/"
+                "restriction gaps as a cause for a transfer that is not in the book."
             )
         elif not pending:
             newest = (transactions_payload.get("transactions") or [{}])[0]
-            lines.append(
-                "Recent transactions on file ({total}), but none are pending, in review, "
-                "or flagged unusual (newest: {code} status={status}). "
-                "Do not invent a stuck transfer.".format(
+            primary.append(
+                "No pending, in-review, or unusual outbound transfer is on file "
+                "({total} recent movement(s); newest {code} status={status}). "
+                "If the user asks why a transfer is pending, lead with that absence — "
+                "do not invent a stuck transfer, and do not invent a cause "
+                "(KYC, suitability, restriction, SLA) for one that is not evidenced.".format(
                     total=total,
                     code=newest.get("transaction_code") or "n/a",
                     status=_humanize_status(newest.get("status")),
@@ -266,11 +384,35 @@ def evidence_from_tool_results(
                         "source": "client_profile",
                     }
                 )
+            if data.get("suitability_status"):
+                items.append(
+                    {
+                        "label": "Suitability",
+                        "value": _humanize_status(data["suitability_status"]),
+                        "source": "client_profile",
+                    }
+                )
             if data.get("segment"):
                 items.append(
                     {
                         "label": "Segment",
                         "value": str(data["segment"]),
+                        "source": "client_profile",
+                    }
+                )
+            if data.get("preferred_channel"):
+                items.append(
+                    {
+                        "label": "Channel",
+                        "value": _humanize_status(data["preferred_channel"]),
+                        "source": "client_profile",
+                    }
+                )
+            if data.get("cross_border_ok") is False:
+                items.append(
+                    {
+                        "label": "Cross-border",
+                        "value": "not consented",
                         "source": "client_profile",
                     }
                 )
@@ -283,6 +425,51 @@ def evidence_from_tool_results(
                         "source": "client_profile",
                     }
                 )
+
+        elif tool == "get_account_summary":
+            holding_count = int(data.get("holding_count") or 0)
+            if holding_count == 0:
+                items.append(
+                    {
+                        "label": "Holdings",
+                        "value": "none on file",
+                        "source": "account_summary",
+                    }
+                )
+            else:
+                accounts = data.get("accounts") or []
+                for account in accounts:
+                    holdings = account.get("holdings") or []
+                    if not holdings:
+                        continue
+                    total = account.get("holdings_market_value_total") or "?"
+                    currency = (
+                        account.get("base_currency")
+                        or account.get("currency")
+                        or ""
+                    )
+                    code = account.get("account_code") or "?"
+                    items.append(
+                        {
+                            "label": "Holdings",
+                            "value": (
+                                f"{code} · {len(holdings)} lines · "
+                                f"{total} {currency}".strip()
+                            ),
+                            "source": "account_summary",
+                        }
+                    )
+                    for holding in holdings[:3]:
+                        symbol = holding.get("asset_symbol") or "?"
+                        value = holding.get("market_value") or "?"
+                        ccy = holding.get("currency") or ""
+                        items.append(
+                            {
+                                "label": "Position",
+                                "value": f"{symbol} · {value} {ccy}".strip(),
+                                "source": "account_summary",
+                            }
+                        )
 
         elif tool == "get_account_restrictions":
             for restriction in data.get("restrictions") or []:

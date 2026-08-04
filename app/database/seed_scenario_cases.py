@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -48,7 +48,7 @@ def seed_scen_01(ctx: ScenarioContext) -> None:
         session,
         client,
         status="expired",
-        document_expiry=date.today() - timedelta(days=45),
+        document_expiry=now.date() - timedelta(days=45),
         now=now,
         notes="Passport expired; refresh requested",
     )
@@ -102,7 +102,7 @@ def seed_scen_01(ctx: ScenarioContext) -> None:
 
 def seed_scen_02(ctx: ScenarioContext) -> None:
     """Active compliance block on a restricted account."""
-    session, rm, now = ctx.session, ctx.rm, ctx.now
+    session, rm, cs, now = ctx.session, ctx.rm, ctx.client_service, ctx.now
     client = make_client(
         session, 2, full_name="Marcus Keller", status="active", residency_country="CH", now=now
     )
@@ -113,7 +113,7 @@ def seed_scen_02(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=400),
+        document_expiry=now.date() + timedelta(days=400),
         now=now,
         notes="Valid KYC",
     )
@@ -129,11 +129,34 @@ def seed_scen_02(ctx: ScenarioContext) -> None:
         now=now,
         notes="Manual compliance review block",
     )
+    request = make_service_request(
+        session,
+        2,
+        client,
+        request_type="compliance_review",
+        subject="Manual compliance block review",
+        now=now,
+        priority="high",
+        sla_due_at=now + timedelta(days=5),
+        assigned=cs,
+    )
+    make_interaction(
+        session,
+        client,
+        employee=cs,
+        channel="secure_message",
+        direction="outbound",
+        subject="Compliance block notified",
+        summary="Informed RM desk that ACC-SCEN-02 is under active compliance_block.",
+        now=now,
+        related=request,
+        days_ago=7,
+    )
 
 
 def seed_scen_03(ctx: ScenarioContext) -> None:
     """Pending outbound transfer delayed for ops review with valid KYC."""
-    session, rm, now = ctx.session, ctx.rm, ctx.now
+    session, rm, cs, now = ctx.session, ctx.rm, ctx.client_service, ctx.now
     client = make_client(
         session, 3, full_name="Sophie Meier", status="active", residency_country="CH", now=now
     )
@@ -144,7 +167,7 @@ def seed_scen_03(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=500),
+        document_expiry=now.date() + timedelta(days=500),
         now=now,
         notes="Valid KYC",
     )
@@ -161,11 +184,34 @@ def seed_scen_03(ctx: ScenarioContext) -> None:
         description="Outbound transfer pending operational review",
         booked_offset_days=1,
     )
+    request = make_service_request(
+        session,
+        3,
+        client,
+        request_type="payment_ops",
+        subject="Ops review on pending outbound transfer",
+        now=now,
+        priority="medium",
+        sla_due_at=now + timedelta(days=2),
+        assigned=cs,
+    )
+    make_interaction(
+        session,
+        client,
+        employee=cs,
+        channel="phone",
+        direction="inbound",
+        subject="Client chase on delayed transfer",
+        summary="Client called about TXN-SCEN-03 still pending ops_review.",
+        now=now,
+        related=request,
+        days_ago=1,
+    )
 
 
 def seed_scen_04(ctx: ScenarioContext) -> None:
     """Booked cash movement flagged as unusual."""
-    session, rm, now = ctx.session, ctx.rm, ctx.now
+    session, rm, cs, now = ctx.session, ctx.rm, ctx.client_service, ctx.now
     client = make_client(
         session, 4, full_name="Jonas Brunner", status="active", residency_country="DE", now=now
     )
@@ -176,7 +222,7 @@ def seed_scen_04(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=300),
+        document_expiry=now.date() + timedelta(days=300),
         now=now,
         notes="Valid KYC",
     )
@@ -192,6 +238,29 @@ def seed_scen_04(ctx: ScenarioContext) -> None:
         is_unusual=True,
         description="Unusual cash pattern vs client baseline",
         booked_offset_days=4,
+    )
+    request = make_service_request(
+        session,
+        4,
+        client,
+        request_type="aml_review",
+        subject="Unusual cash movement review",
+        now=now,
+        priority="high",
+        sla_due_at=now + timedelta(days=4),
+        assigned=cs,
+    )
+    make_interaction(
+        session,
+        client,
+        employee=cs,
+        channel="secure_message",
+        direction="outbound",
+        subject="Unusual pattern flagged",
+        summary="Logged TXN-SCEN-04 as unusual vs baseline; open AML-style review ticket.",
+        now=now,
+        related=request,
+        days_ago=3,
     )
 
 
@@ -218,7 +287,7 @@ def seed_scen_05(ctx: ScenarioContext) -> None:
         session,
         client,
         status="incomplete",
-        document_expiry=date.today() + timedelta(days=30),
+        document_expiry=now.date() + timedelta(days=30),
         now=now,
         notes="Onboarding KYC package incomplete",
     )
@@ -239,7 +308,7 @@ def seed_scen_06(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=200),
+        document_expiry=now.date() + timedelta(days=200),
         now=now,
         notes="Valid KYC",
     )
@@ -283,7 +352,7 @@ def seed_scen_07(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=600),
+        document_expiry=now.date() + timedelta(days=600),
         now=now,
         notes="Valid KYC",
     )
@@ -304,7 +373,7 @@ def seed_scen_08(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=350),
+        document_expiry=now.date() + timedelta(days=350),
         now=now,
         notes="Valid KYC",
     )
@@ -345,7 +414,7 @@ def seed_scen_09(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=100),
+        document_expiry=now.date() + timedelta(days=100),
         now=now,
         notes="Valid KYC; relationship dormant",
     )
@@ -375,7 +444,7 @@ def seed_scen_10(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=450),
+        document_expiry=now.date() + timedelta(days=450),
         now=now,
         notes="Valid KYC",
     )
@@ -419,7 +488,7 @@ def seed_scen_11(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=280),
+        document_expiry=now.date() + timedelta(days=280),
         now=now,
         notes="Valid KYC",
     )
@@ -463,7 +532,7 @@ def seed_scen_12(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=320),
+        document_expiry=now.date() + timedelta(days=320),
         now=now,
         notes="Valid KYC",
     )
@@ -497,7 +566,7 @@ def seed_scen_12(ctx: ScenarioContext) -> None:
 
 def seed_scen_13(ctx: ScenarioContext) -> None:
     """High-value booked cash transfer for UHNW review."""
-    session, rm, now = ctx.session, ctx.rm, ctx.now
+    session, rm, cs, now = ctx.session, ctx.rm, ctx.client_service, ctx.now
     client = make_client(
         session,
         13,
@@ -514,7 +583,7 @@ def seed_scen_13(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=700),
+        document_expiry=now.date() + timedelta(days=700),
         now=now,
         notes="Valid KYC",
     )
@@ -531,6 +600,29 @@ def seed_scen_13(ctx: ScenarioContext) -> None:
         description="High-value booked cash transfer",
         booked_offset_days=2,
     )
+    request = make_service_request(
+        session,
+        13,
+        client,
+        request_type="high_value_review",
+        subject="UHNW high-value cash movement review",
+        now=now,
+        priority="high",
+        sla_due_at=now + timedelta(days=3),
+        assigned=cs,
+    )
+    make_interaction(
+        session,
+        client,
+        employee=rm,
+        channel="phone",
+        direction="inbound",
+        subject="Client confirmation on large cash transfer",
+        summary="RM logged inbound note on TXN-SCEN-13 high-value booked transfer.",
+        now=now,
+        related=request,
+        days_ago=2,
+    )
 
 
 def seed_scen_14(ctx: ScenarioContext) -> None:
@@ -546,7 +638,7 @@ def seed_scen_14(ctx: ScenarioContext) -> None:
         session,
         client,
         status="invalid",
-        document_expiry=date.today() + timedelta(days=10),
+        document_expiry=now.date() + timedelta(days=10),
         now=now,
         notes="Document upload failed — file unreadable / rejected",
     )
@@ -590,7 +682,7 @@ def seed_scen_15(ctx: ScenarioContext) -> None:
         session,
         client,
         status="valid",
-        document_expiry=date.today() + timedelta(days=380),
+        document_expiry=now.date() + timedelta(days=380),
         now=now,
         notes="Valid KYC",
     )

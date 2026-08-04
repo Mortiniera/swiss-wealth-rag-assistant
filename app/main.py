@@ -13,6 +13,11 @@ from app.config import settings
 from app.database.models.knowledge import KnowledgeDocument
 from app.database.models.people import Employee
 from app.database.seed import seed_database
+from app.database.seed_runner import (
+    employee_count,
+    get_applied_seed_data_version,
+    run_full_domain_reseed,
+)
 from app.database.session import SessionLocal
 from app.rag.policy_ingest import ingest_policies
 
@@ -27,24 +32,65 @@ logging.basicConfig(
 
 
 def maybe_startup_seed() -> None:
-    """Seed synthetic banking data when the domain has no employees.
-
-    Skips when AUTO_SEED is false or employees already exist (Neon persists
-    across Render restarts — no reseed on every cold start). Never truncates.
     """
-    if not settings.auto_seed:
-        logger.info("Startup seed skipped (AUTO_SEED=false)")
+    Apply synthetic banking data on API startup without a shell.
+
+    - ``AUTO_RESEED=true``: truncate + reseed every boot (demo only).
+    - ``SEED_DATA_VERSION`` > last applied version: truncate + reseed once per bump
+      (set on Render when seed scripts change — e.g. ``7`` for v0.7).
+    - ``AUTO_SEED=true``: seed only when the domain has no employees (never truncates).
+    """
+    if (
+        not settings.auto_seed
+        and not settings.auto_reseed
+        and settings.seed_data_version <= 0
+    ):
+        logger.info("Startup seed skipped (AUTO_SEED=false, no SEED_DATA_VERSION)")
         return
 
     session = SessionLocal()
     try:
-        count = session.scalar(select(func.count()).select_from(Employee)) or 0
-        if count > 0:
+        applied_version = get_applied_seed_data_version(session)
+        target_version = settings.seed_data_version
+
+        if settings.auto_reseed:
             logger.info(
-                "Startup seed skipped (domain already has %d employees)",
-                count,
+                "Startup domain reseed (AUTO_RESEED=true, applied_version=%d)",
+                applied_version,
+            )
+            run_full_domain_reseed(
+                session,
+                rng_seed=settings.seed_rng_seed,
+                client_count=settings.auto_seed_clients,
+                seed_data_version=max(target_version, applied_version + 1),
             )
             return
+
+        if target_version > applied_version:
+            logger.info(
+                "Startup domain reseed (SEED_DATA_VERSION %d > applied %d)",
+                target_version,
+                applied_version,
+            )
+            run_full_domain_reseed(
+                session,
+                rng_seed=settings.seed_rng_seed,
+                client_count=settings.auto_seed_clients,
+                seed_data_version=target_version,
+            )
+            return
+
+        if not settings.auto_seed:
+            return
+
+        if employee_count(session) > 0:
+            logger.info(
+                "Startup seed skipped (domain already has employees, "
+                "seed_data_version=%d applied)",
+                applied_version,
+            )
+            return
+
         logger.info(
             "Startup seed: empty domain, loading synthetic clients "
             "(clients=%d, rng_seed=%d)",

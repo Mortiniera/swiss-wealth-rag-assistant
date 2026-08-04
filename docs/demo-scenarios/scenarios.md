@@ -9,9 +9,9 @@ All data is synthetic. Read-only inspection is in scope; mutating banking state,
 | ID | Scenario | Client | Primary codes |
 | -- | -------- | ------ | ------------- |
 | SCEN-01 | Expired KYC document | `CLI-SCEN-01` | `ACC-SCEN-01` |
-| SCEN-02 | Account restriction | `CLI-SCEN-02` | `ACC-SCEN-02`, `RST-SCEN-02` |
-| SCEN-03 | Delayed transfer | `CLI-SCEN-03` | `ACC-SCEN-03`, `TXN-SCEN-03` |
-| SCEN-04 | Unusual transaction | `CLI-SCEN-04` | `ACC-SCEN-04`, `TXN-SCEN-04` |
+| SCEN-02 | Account restriction | `CLI-SCEN-02` | `ACC-SCEN-02`, `RST-SCEN-02`, `SRQ-SCEN-02` |
+| SCEN-03 | Delayed transfer | `CLI-SCEN-03` | `ACC-SCEN-03`, `TXN-SCEN-03`, `SRQ-SCEN-03` |
+| SCEN-04 | Unusual transaction | `CLI-SCEN-04` | `ACC-SCEN-04`, `TXN-SCEN-04`, `SRQ-SCEN-04` |
 | SCEN-05 | Incomplete onboarding | `CLI-SCEN-05` | `ACC-SCEN-05` |
 | SCEN-06 | Unresolved complaint | `CLI-SCEN-06` | `SRQ-SCEN-06` |
 | SCEN-07 | Missing suitability questionnaire | `CLI-SCEN-07` | `ACC-SCEN-07` |
@@ -20,7 +20,7 @@ All data is synthetic. Read-only inspection is in scope; mutating banking state,
 | SCEN-10 | Portfolio decline enquiry | `CLI-SCEN-10` | `ACC-SCEN-10` |
 | SCEN-11 | Communication-preference conflict | `CLI-SCEN-11` | `SRQ-SCEN-11` |
 | SCEN-12 | Previous unresolved email | `CLI-SCEN-12` | `SRQ-SCEN-12` |
-| SCEN-13 | High-value cash movement | `CLI-SCEN-13` | `ACC-SCEN-13`, `TXN-SCEN-13` |
+| SCEN-13 | High-value cash movement | `CLI-SCEN-13` | `ACC-SCEN-13`, `TXN-SCEN-13`, `SRQ-SCEN-13` |
 | SCEN-14 | Failed document upload | `CLI-SCEN-14` | `SRQ-SCEN-14` |
 | SCEN-15 | Service-request SLA breach | `CLI-SCEN-15` | `SRQ-SCEN-15` |
 
@@ -62,12 +62,13 @@ An RM looks up why a client’s outbound transfer is stuck. The passport on file
 
 Compliance put a manual block on an account. The RM needs to see that the account is restricted and why, before trying to explain a blocked action to the client.
 
-**Codes:** `CLI-SCEN-02`, `ACC-SCEN-02` (`status=restricted`), `RST-SCEN-02`
+**Codes:** `CLI-SCEN-02`, `ACC-SCEN-02` (`status=restricted`), `RST-SCEN-02`, `SRQ-SCEN-02`
 
 **Facts**
 
 - Active client; account marked restricted
 - Restriction `compliance_block`, `reason_code=manual_review`, `status=active`
+- Open service request and interaction documenting the compliance block
 
 **Operator can verify**
 
@@ -87,12 +88,13 @@ Compliance put a manual block on an account. The RM needs to see that the accoun
 
 A transfer is pending for an operational review, while KYC is still valid. This isolates “ops delay” from the expired-KYC story in SCEN-01.
 
-**Codes:** `CLI-SCEN-03`, `ACC-SCEN-03`, `TXN-SCEN-03`
+**Codes:** `CLI-SCEN-03`, `ACC-SCEN-03`, `TXN-SCEN-03`, `SRQ-SCEN-03`
 
 **Facts**
 
 - Pending outbound transfer with `delay_reason_code=ops_review`
 - KYC otherwise valid (isolates transfer delay from SCEN-01)
+- Open payment-ops service request and inbound client chase note
 
 **Operator can verify**
 
@@ -112,12 +114,13 @@ A transfer is pending for an operational review, while KYC is still valid. This 
 
 A booked cash movement looks atypical for the client. An operator inspects the flagged transaction and recent activity to understand what raised the alert.
 
-**Codes:** `CLI-SCEN-04`, `ACC-SCEN-04`, `TXN-SCEN-04`
+**Codes:** `CLI-SCEN-04`, `ACC-SCEN-04`, `TXN-SCEN-04`, `SRQ-SCEN-04`
 
 **Facts**
 
 - Booked cash movement with `is_unusual=true` and elevated amount
 - Optional note in description referencing unusual pattern
+- Open AML-style review request and outbound flag note
 
 **Operator can verify**
 
@@ -340,12 +343,13 @@ The client emailed in and nobody has answered yet. The inbound message sits awai
 
 A very large cash transfer has already booked. Operators can inspect amount and counterparty when reviewing significant cash activity.
 
-**Codes:** `CLI-SCEN-13`, `ACC-SCEN-13`, `TXN-SCEN-13`
+**Codes:** `CLI-SCEN-13`, `ACC-SCEN-13`, `TXN-SCEN-13`, `SRQ-SCEN-13`
 
 **Facts**
 
 - Large booked cash transfer (amount well above typical seed ranges)
 - May also set `is_unusual=true` when combined with pattern flags
+- Open high-value review request and RM inbound confirmation note
 
 **Operator can verify**
 
