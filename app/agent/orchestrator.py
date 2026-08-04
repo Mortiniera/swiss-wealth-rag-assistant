@@ -22,11 +22,17 @@ from app.agent.routing import (
 )
 from app.agent.state import AgentState
 from app.models.schemas import ChatMessage
+from app.observability.tracing import (
+    current_trace_id,
+    flush_observability,
+    observe,
+    safe_update,
+)
 
 logger = logging.getLogger(__name__)
 
 MAX_HISTORY_TURNS = 10
-# classify + up to 5×(turn+run) + finish turn + rewrite + generate, with headroom.
+# classify + up to 5×(turn+run) + finish turn + rewrite + generate.
 MAX_STEPS = 18
 
 CONTROLLED_FAILURE = {
@@ -72,6 +78,74 @@ def _finalize(state: AgentState) -> dict:
     return dict(CONTROLLED_FAILURE)
 
 
+def _ask_root_metadata(
+    *,
+    role: str | None,
+    actor_employee_code: str | None,
+    question: str,
+    history_turns: int,
+) -> dict:
+    """Codes-only attributes for the root /ask span (no emails/names/question body)."""
+    return {
+        "role": role,
+        "actor_employee_code": actor_employee_code,
+        "question_length": len(question),
+        "history_turns": history_turns,
+    }
+
+
+def _finalize_ask_span(span, state: AgentState) -> None:
+    safe_update(
+        span,
+        metadata={
+            "client_ref": state.client_ref,
+            "intent": state.intent,
+            "stop_reason": state.stop_reason,
+            "tool_round": state.tool_round,
+            "status": state.status,
+            "transitions": list(state.transitions),
+        },
+        output={"status": state.status, "stop_reason": state.stop_reason},
+        level="ERROR" if state.status == "failed" else "DEFAULT",
+        status_message=state.error if state.status == "failed" else None,
+    )
+
+
+def _run_node_with_span(step: str, node: NodeFn, state: AgentState) -> None:
+    """Execute one workflow node under a child observation."""
+    meta: dict = {"step": step}
+    if step == STEP_RUN_TOOLS and state.selected_tools:
+        meta["tools"] = list(state.selected_tools)
+        meta["tool_round_before"] = state.tool_round
+    if step == STEP_SEARCH_POLICIES and state.policy_query:
+        meta["policy_query"] = state.policy_query
+
+    with observe(step, metadata=meta) as span:
+        node(state)
+        if step == STEP_CLASSIFY:
+            safe_update(span, metadata={"intent": state.intent})
+        elif step == STEP_RUN_TOOLS:
+            safe_update(
+                span,
+                metadata={
+                    "tool_round": state.tool_round,
+                    "selected_tools": list(state.selected_tools),
+                },
+            )
+        elif step == STEP_SEARCH_POLICIES:
+            safe_update(span, metadata={"policy_hit_count": len(state.policy_hits)})
+        elif step == STEP_AGENT_TURN and state.last_decision:
+            decision = state.last_decision
+            safe_update(
+                span,
+                metadata={
+                    "action": decision.get("action"),
+                    "tool": decision.get("tool"),
+                    "reason_code": decision.get("reason_code"),
+                },
+            )
+
+
 def handle_question(
     question: str,
     history: list[ChatMessage] | None = None,
@@ -84,43 +158,59 @@ def handle_question(
 
     Public contract: ``{answer, sources}``. Optional Act-as identity scopes tools.
     """
-    state = AgentState(
-        question=question,
-        history=(history or [])[-MAX_HISTORY_TURNS:],
+    history_turns = len(history or [])
+    root_meta = _ask_root_metadata(
         role=role,
         actor_employee_code=actor_employee_code,
-        client_ref=extract_client_ref(question),
+        question=question,
+        history_turns=history_turns,
     )
 
-    for _ in range(MAX_STEPS):
-        nxt = next_step(state)
-        if nxt == END:
-            break
+    with observe("ask", metadata=root_meta) as ask_span:
+        state = AgentState(
+            question=question,
+            history=(history or [])[-MAX_HISTORY_TURNS:],
+            role=role,
+            actor_employee_code=actor_employee_code,
+            client_ref=extract_client_ref(question),
+        )
+        safe_update(ask_span, metadata={"client_ref": state.client_ref})
 
-        node = NODES.get(nxt)
-        if node is None:
+        for _ in range(MAX_STEPS):
+            nxt = next_step(state)
+            if nxt == END:
+                break
+
+            node = NODES.get(nxt)
+            if node is None:
+                state.status = "failed"
+                state.error = f"Unknown workflow step '{nxt}'"
+                break
+
+            state.transitions.append(nxt)
+            state.step = nxt
+            _run_node_with_span(nxt, node, state)
+
+            if state.status in ("completed", "failed"):
+                break
+        else:
+            # Loop exhausted without break, hard bound hit after max steps.
             state.status = "failed"
-            state.error = f"Unknown workflow step '{nxt}'"
-            break
+            state.error = f"Exceeded MAX_STEPS ({MAX_STEPS})"
 
-        state.transitions.append(nxt)
-        state.step = nxt
-        node(state)
+        _finalize_ask_span(ask_span, state)
 
-        if state.status in ("completed", "failed"):
-            break
-    else:
-        # Loop exhausted without break, hard bound hit after max steps.
-        state.status = "failed"
-        state.error = f"Exceeded MAX_STEPS ({MAX_STEPS})"
+        logger.info(
+            "Agent workflow finished: status=%s client_ref=%s tool_round=%s "
+            "stop_reason=%s transitions=%s trace_id=%s",
+            state.status,
+            state.client_ref,
+            state.tool_round,
+            state.stop_reason,
+            state.transitions,
+            current_trace_id(),
+        )
+        result = _finalize(state)
 
-    logger.info(
-        "Agent workflow finished: status=%s client_ref=%s tool_round=%s "
-        "stop_reason=%s transitions=%s",
-        state.status,
-        state.client_ref,
-        state.tool_round,
-        state.stop_reason,
-        state.transitions,
-    )
-    return _finalize(state)
+    flush_observability()
+    return result
