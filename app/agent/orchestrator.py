@@ -25,7 +25,8 @@ from app.models.schemas import ChatMessage
 logger = logging.getLogger(__name__)
 
 MAX_HISTORY_TURNS = 10
-MAX_STEPS = 10
+# classify + up to 5×(select+run) + rewrite + generate, with headroom.
+MAX_STEPS = 16
 
 CONTROLLED_FAILURE = {
     "answer": (
@@ -112,9 +113,12 @@ def handle_question(
         state.error = f"Exceeded MAX_STEPS ({MAX_STEPS})"
 
     logger.info(
-        "Agent workflow finished: status=%s client_ref=%s transitions=%s",
+        "Agent workflow finished: status=%s client_ref=%s tool_round=%s "
+        "stop_reason=%s transitions=%s",
         state.status,
         state.client_ref,
+        state.tool_round,
+        state.stop_reason,
         state.transitions,
     )
     return _finalize(state)

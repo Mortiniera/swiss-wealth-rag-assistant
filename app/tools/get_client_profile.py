@@ -25,6 +25,8 @@ class GetClientProfileInput(BaseModel):
 def _slim_profile(client_out) -> dict:
     """Reduce ClientOut to facts useful for grounded answers."""
     kyc = client_out.kyc_profile
+    suitability = client_out.suitability_profile
+    prefs = client_out.communication_preference
     primary = client_out.primary_assignment
     return {
         "client_code": client_out.client_code,
@@ -37,6 +39,13 @@ def _slim_profile(client_out) -> dict:
         "kyc_document_expiry": (
             kyc.document_expiry.isoformat() if kyc and kyc.document_expiry else None
         ),
+        "suitability_status": suitability.status if suitability else None,
+        "suitability_risk_profile": (
+            suitability.risk_profile if suitability else None
+        ),
+        "preferred_channel": prefs.preferred_channel if prefs else None,
+        "cross_border_ok": prefs.cross_border_ok if prefs else None,
+        "preferred_language": prefs.language if prefs else None,
         "primary_rm_code": primary.employee_code if primary else None,
         "primary_rm_name": primary.full_name if primary else None,
     }

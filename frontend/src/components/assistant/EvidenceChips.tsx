@@ -11,6 +11,12 @@ function toneFor(label: string, value: string): "neutral" | "warning" | "danger"
   if (l === "kyc" && (v.includes("expired") || v.includes("refresh"))) {
     return v.includes("expired") ? "danger" : "warning";
   }
+  if (l === "suitability" && (v.includes("missing") || v.includes("outdated"))) {
+    return "warning";
+  }
+  if (l === "cross-border") {
+    return "warning";
+  }
   if (l === "restriction") {
     return "warning";
   }

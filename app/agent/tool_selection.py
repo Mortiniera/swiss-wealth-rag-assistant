@@ -19,6 +19,7 @@ TOOL_ALLOWLIST: tuple[str, ...] = (
 )
 
 MAX_TOOLS_PER_RUN = 3
+MAX_TOOLS_PER_ROUND = 1
 FALLBACK_TOOLS: tuple[str, ...] = ("get_client_profile",)
 
 _TOOL_SET = frozenset(TOOL_ALLOWLIST)
@@ -110,6 +111,13 @@ def heuristic_tools(question: str) -> list[str]:
             "profile",
             "document expiry",
             "identity",
+            "suitability",
+            "questionnaire",
+            "risk profile",
+            "onboarding",
+            "cross-border",
+            "cross border",
+            "preferred channel",
         )
     ):
         picks.append("get_client_profile")
@@ -144,28 +152,36 @@ def normalize_selected_tools(
     max_tools: int = MAX_TOOLS_PER_RUN,
     ensure_profile_if_any: bool = True,
     fallback_if_empty: bool = True,
+    exclude: Iterable[str] = (),
 ) -> list[str]:
     """
     Keep allowlisted names only, stable order, hard cap.
 
     If any non-profile tool is chosen, include ``get_client_profile`` when room allows.
+    Names in ``exclude`` (already called this run) are dropped.
     """
+    excluded = frozenset(exclude)
     seen: set[str] = set()
     ordered: list[str] = []
     for name in candidates:
-        if name not in _TOOL_SET or name in seen:
+        if name not in _TOOL_SET or name in seen or name in excluded:
             continue
         seen.add(name)
         ordered.append(name)
 
-    if ensure_profile_if_any and ordered and "get_client_profile" not in seen:
+    if (
+        ensure_profile_if_any
+        and ordered
+        and "get_client_profile" not in seen
+        and "get_client_profile" not in excluded
+    ):
         ordered.insert(0, "get_client_profile")
 
     # Stable allowlist order for inspectability.
     ordered = [name for name in TOOL_ALLOWLIST if name in set(ordered)]
 
     if not ordered and fallback_if_empty:
-        ordered = list(FALLBACK_TOOLS)
+        ordered = [name for name in FALLBACK_TOOLS if name not in excluded]
 
     return ordered[:max_tools]
 
@@ -175,19 +191,24 @@ def merge_tool_choices(
     heuristic_names: Iterable[str],
     *,
     max_tools: int = MAX_TOOLS_PER_RUN,
+    ensure_profile_if_any: bool = True,
     fallback_if_empty: bool = False,
+    exclude: Iterable[str] = (),
 ) -> list[str]:
     """Union LLM + heuristic picks, then normalize."""
     combined = list(llm_names) + list(heuristic_names)
     selected = normalize_selected_tools(
         combined,
         max_tools=max_tools,
+        ensure_profile_if_any=ensure_profile_if_any,
         fallback_if_empty=fallback_if_empty,
+        exclude=exclude,
     )
     logger.info(
-        "Tool selection merged: llm=%s heuristic=%s selected=%s",
+        "Tool selection merged: llm=%s heuristic=%s exclude=%s selected=%s",
         list(llm_names),
         list(heuristic_names),
+        list(exclude),
         selected,
     )
     return selected

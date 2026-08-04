@@ -68,6 +68,17 @@ def test_heuristic_awaiting_reply():
     assert "get_interaction_history" in picks
 
 
+def test_normalize_excludes_already_called_tools():
+    selected = normalize_selected_tools(
+        ["get_client_profile", "get_recent_transactions"],
+        max_tools=1,
+        ensure_profile_if_any=False,
+        fallback_if_empty=False,
+        exclude=["get_client_profile"],
+    )
+    assert selected == ["get_recent_transactions"]
+
+
 def test_merge_empty_without_fallback_stays_empty():
     assert merge_tool_choices([], [], fallback_if_empty=False) == []
 

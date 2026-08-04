@@ -94,6 +94,42 @@ def format_structured_facts(tool_results: list[dict[str, Any]]) -> str | None:
         elif kyc_raw:
             lines.append(f"KYC on file: {kyc} ({doc_type}, expiry {expiry}).")
 
+        suit_raw = (profile.get("suitability_status") or "").lower()
+        suit = _humanize_status(profile.get("suitability_status"))
+        risk = profile.get("suitability_risk_profile") or "n/a"
+        if suit_raw in {"missing", "outdated", "incomplete"}:
+            primary.append(
+                f"Suitability {suit} (risk profile {risk}) — cite this gap; "
+                "do not claim the questionnaire is complete."
+            )
+        elif suit_raw:
+            lines.append(f"Suitability on file: {suit} (risk profile {risk}).")
+        elif "suitability_status" in profile:
+            lines.append(
+                "Suitability profile: none on file. "
+                "Do not invent a completed questionnaire."
+            )
+
+        channel = profile.get("preferred_channel")
+        cross_border = profile.get("cross_border_ok")
+        language = profile.get("preferred_language")
+        if channel or cross_border is not None or language:
+            cross_bit = (
+                "unspecified"
+                if cross_border is None
+                else ("yes" if cross_border else "no")
+            )
+            lines.append(
+                f"Communication prefs: channel={channel or 'n/a'}, "
+                f"language={language or 'n/a'}, cross_border_ok={cross_bit}."
+            )
+            if cross_border is False:
+                primary.append(
+                    "Cross-border communication is not consented "
+                    f"(residency {profile.get('residency_country') or 'n/a'}) — "
+                    "do not recommend outbound contact that ignores this flag."
+                )
+
         rm = (
             profile.get("primary_rm_name")
             or profile.get("primary_rm_code")
@@ -322,11 +358,35 @@ def evidence_from_tool_results(
                         "source": "client_profile",
                     }
                 )
+            if data.get("suitability_status"):
+                items.append(
+                    {
+                        "label": "Suitability",
+                        "value": _humanize_status(data["suitability_status"]),
+                        "source": "client_profile",
+                    }
+                )
             if data.get("segment"):
                 items.append(
                     {
                         "label": "Segment",
                         "value": str(data["segment"]),
+                        "source": "client_profile",
+                    }
+                )
+            if data.get("preferred_channel"):
+                items.append(
+                    {
+                        "label": "Channel",
+                        "value": _humanize_status(data["preferred_channel"]),
+                        "source": "client_profile",
+                    }
+                )
+            if data.get("cross_border_ok") is False:
+                items.append(
+                    {
+                        "label": "Cross-border",
+                        "value": "not consented",
                         "source": "client_profile",
                     }
                 )

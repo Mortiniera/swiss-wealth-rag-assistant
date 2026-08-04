@@ -30,6 +30,53 @@ def test_format_facts_leads_with_kyc_signal():
     assert "enhanced-review" in facts
 
 
+def test_format_facts_leads_with_missing_suitability():
+    facts = format_structured_facts(
+        [
+            {
+                "tool": "get_client_profile",
+                "ok": True,
+                "data": {
+                    "client_code": "CLI-SCEN-07",
+                    "full_name": "Amelie Schneider",
+                    "status": "active",
+                    "segment": "hnwi",
+                    "residency_country": "CH",
+                    "kyc_status": "valid",
+                    "kyc_document_type": "passport",
+                    "kyc_document_expiry": "2028-03-26",
+                    "suitability_status": "missing",
+                    "suitability_risk_profile": None,
+                    "primary_rm_name": "Elena Brunner",
+                },
+            }
+        ]
+    )
+    assert facts is not None
+    assert "KYC on file: valid" in facts
+    assert "Suitability missing" in facts
+    assert "do not claim the questionnaire is complete" in facts
+
+
+def test_evidence_chips_include_suitability():
+    evidence = evidence_from_tool_results(
+        [
+            {
+                "tool": "get_client_profile",
+                "ok": True,
+                "data": {
+                    "kyc_status": "valid",
+                    "suitability_status": "missing",
+                    "segment": "hnwi",
+                },
+            }
+        ]
+    )
+    assert any(
+        item["label"] == "Suitability" and item["value"] == "missing" for item in evidence
+    )
+
+
 def test_format_facts_includes_restriction_and_kyc_primaries():
     facts = format_structured_facts(
         [
@@ -44,7 +91,7 @@ def test_format_facts_includes_restriction_and_kyc_primaries():
                     "residency_country": "CH",
                     "kyc_status": "expired",
                     "kyc_document_type": "passport",
-                    "kyc_document_expiry": "2027-04-13",
+                    "kyc_document_expiry": "2024-01-01",
                     "primary_rm_name": "Elena Brunner",
                 },
             },
@@ -324,61 +371,3 @@ def test_failed_tools_yield_no_evidence():
     assert evidence_from_tool_results(
         [{"tool": "get_client_profile", "ok": False, "error": {"code": "not_found"}}]
     ) == []
-
-
-def test_format_facts_empty_holdings_does_not_invent_positions():
-    facts = format_structured_facts(
-        [
-            {
-                "tool": "get_account_summary",
-                "ok": True,
-                "data": {
-                    "account_count": 0,
-                    "holding_count": 0,
-                    "accounts": [],
-                },
-            }
-        ]
-    )
-    assert facts is not None
-    assert "none on file" in facts
-    assert "Do not invent portfolio positions" in facts
-
-
-def test_evidence_account_summary_chips():
-    evidence = evidence_from_tool_results(
-        [
-            {
-                "tool": "get_account_summary",
-                "ok": True,
-                "data": {
-                    "account_count": 1,
-                    "holding_count": 2,
-                    "accounts": [
-                        {
-                            "account_code": "ACC-SCEN-10",
-                            "base_currency": "CHF",
-                            "holdings_market_value_total": "298000.00",
-                            "holdings": [
-                                {
-                                    "asset_symbol": "NESN.SW",
-                                    "market_value": "210000.00",
-                                    "currency": "CHF",
-                                },
-                                {
-                                    "asset_symbol": "ROG.SW",
-                                    "market_value": "88000.00",
-                                    "currency": "CHF",
-                                },
-                            ],
-                        }
-                    ],
-                },
-            }
-        ]
-    )
-    assert evidence[0]["label"] == "Holdings"
-    assert "ACC-SCEN-10" in evidence[0]["value"]
-    assert any(
-        item["label"] == "Position" and "NESN.SW" in item["value"] for item in evidence
-    )

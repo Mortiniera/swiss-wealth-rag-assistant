@@ -44,7 +44,7 @@ def test_routing_rag_path_without_client():
     assert next_step(state) == END
 
 
-def test_routing_rag_path_with_client_selects_then_runs_tools():
+def test_routing_rag_path_with_client_loops_tools_until_stop():
     state = AgentState(
         question="Regarding CLI-SCEN-01: KYC?",
         intent="RAG_QUERY",
@@ -52,9 +52,28 @@ def test_routing_rag_path_with_client_selects_then_runs_tools():
         step=STEP_CLASSIFY,
     )
     assert next_step(state) == STEP_SELECT_TOOLS
+
     state.step = STEP_SELECT_TOOLS
+    state.selected_tools = ["get_client_profile"]
     assert next_step(state) == STEP_RUN_TOOLS
+
     state.step = STEP_RUN_TOOLS
+    state.tool_round = 1
+    assert next_step(state) == STEP_SELECT_TOOLS
+
+    state.step = STEP_SELECT_TOOLS
+    state.selected_tools = []
+    assert next_step(state) == STEP_REWRITE
+
+
+def test_routing_stops_tool_loop_at_max_rounds():
+    state = AgentState(
+        question="Regarding CLI-SCEN-01: KYC?",
+        client_ref="CLI-SCEN-01",
+        step=STEP_RUN_TOOLS,
+        tool_round=5,
+        max_tool_rounds=5,
+    )
     assert next_step(state) == STEP_REWRITE
 
 
@@ -87,7 +106,7 @@ def test_runner_respects_max_steps():
         result = handle_question("never ends")
 
     assert result == CONTROLLED_FAILURE
-    assert MAX_STEPS == 10
+    assert MAX_STEPS == 16
 
 
 def test_runner_oos_uses_classify_then_respond():
@@ -126,49 +145,63 @@ def test_runner_selects_and_runs_tools_for_client_question():
 
     def tracking_select(state: AgentState) -> None:
         seen.append(state.step or "")
-        state.selected_tools = [
-            "get_client_profile",
-            "get_recent_transactions",
-        ]
+        if state.tool_round == 0:
+            state.selected_tools = ["get_client_profile"]
+        elif state.tool_round == 1:
+            state.selected_tools = ["get_recent_transactions"]
+        else:
+            state.selected_tools = []
+            state.stop_reason = "enough_evidence"
 
     def tracking_run(state: AgentState) -> None:
         seen.append(state.step or "")
-        assert state.selected_tools == [
-            "get_client_profile",
-            "get_recent_transactions",
-        ]
-        state.tool_results.append(
-            ToolResult(
-                tool="get_client_profile",
-                ok=True,
-                data={
-                    "client_code": "CLI-SCEN-01",
-                    "full_name": "Helena Vogt",
-                    "kyc_status": "expired",
-                    "kyc_document_expiry": "2024-01-01",
-                },
-            ).to_dict()
-        )
-        state.tool_results.append(
-            ToolResult(
-                tool="get_recent_transactions",
-                ok=True,
-                data={
-                    "transaction_count": 1,
-                    "pending_or_unusual": [
-                        {
-                            "transaction_code": "TXN-SCEN-01",
-                            "account_code": "ACC-SCEN-01",
-                            "txn_type": "transfer_out",
-                            "amount": "250000.00",
-                            "currency": "CHF",
-                            "status": "pending",
-                            "delay_reason_code": "kyc_expired",
-                            "is_unusual": False,
-                        }
-                    ],
-                },
-            ).to_dict()
+        assert len(state.selected_tools) == 1
+        tool = state.selected_tools[0]
+        if tool == "get_client_profile":
+            state.tool_results.append(
+                ToolResult(
+                    tool="get_client_profile",
+                    ok=True,
+                    data={
+                        "client_code": "CLI-SCEN-01",
+                        "full_name": "Helena Vogt",
+                        "kyc_status": "expired",
+                        "kyc_document_expiry": "2024-01-01",
+                    },
+                ).to_dict()
+            )
+        else:
+            state.tool_results.append(
+                ToolResult(
+                    tool="get_recent_transactions",
+                    ok=True,
+                    data={
+                        "transaction_count": 1,
+                        "pending_or_unusual_count": 1,
+                        "pending_or_unusual": [
+                            {
+                                "transaction_code": "TXN-SCEN-01",
+                                "account_code": "ACC-SCEN-01",
+                                "txn_type": "transfer_out",
+                                "amount": "250000.00",
+                                "currency": "CHF",
+                                "status": "pending",
+                                "delay_reason_code": "kyc_expired",
+                                "is_unusual": False,
+                            }
+                        ],
+                    },
+                ).to_dict()
+            )
+        state.tools_called.append(tool)
+        state.tool_round += 1
+        state.round_trace.append(
+            {
+                "round": state.tool_round,
+                "selected": [tool],
+                "tools": [tool],
+                "ok": [True],
+            }
         )
 
     def tracking_rewrite(state: AgentState) -> None:
@@ -178,6 +211,20 @@ def test_runner_selects_and_runs_tools_for_client_question():
     def tracking_generate(state: AgentState) -> None:
         seen.append(state.step or "")
         assert len(state.tool_results) == 2
+        assert state.round_trace == [
+            {
+                "round": 1,
+                "selected": ["get_client_profile"],
+                "tools": ["get_client_profile"],
+                "ok": [True],
+            },
+            {
+                "round": 2,
+                "selected": ["get_recent_transactions"],
+                "tools": ["get_recent_transactions"],
+                "ok": [True],
+            },
+        ]
         state.answer = "ok"
         state.sources = []
         state.status = "completed"
@@ -201,6 +248,9 @@ def test_runner_selects_and_runs_tools_for_client_question():
         STEP_CLASSIFY,
         STEP_SELECT_TOOLS,
         STEP_RUN_TOOLS,
+        STEP_SELECT_TOOLS,
+        STEP_RUN_TOOLS,
+        STEP_SELECT_TOOLS,
         STEP_REWRITE,
         STEP_GENERATE,
     ]
@@ -244,3 +294,55 @@ def test_run_tools_node_dispatches_account_summary():
 
     mock_summary.assert_called_once_with(state)
     mock_profile.assert_not_called()
+
+
+def test_run_tools_node_records_round_trace_and_advances():
+    from app.agent.nodes.run_tools import run as run_tools
+
+    state = AgentState(
+        question="pending transfer?",
+        client_ref="CLI-SCEN-01",
+        selected_tools=["get_recent_transactions"],
+        max_tool_rounds=5,
+    )
+
+    def fake_txn(s: AgentState) -> None:
+        s.tool_results.append(
+            ToolResult(
+                tool="get_recent_transactions",
+                ok=True,
+                data={"transaction_count": 0, "pending_or_unusual_count": 0},
+            ).to_dict()
+        )
+
+    with patch("app.agent.nodes.run_tools.fetch_transactions.run", side_effect=fake_txn):
+        run_tools(state)
+
+    assert state.tool_round == 1
+    assert state.tools_called == ["get_recent_transactions"]
+    assert state.round_trace == [
+        {
+            "round": 1,
+            "selected": ["get_recent_transactions"],
+            "tools": ["get_recent_transactions"],
+            "ok": [True],
+        }
+    ]
+    assert state.stop_reason is None
+
+
+def test_run_tools_sets_max_rounds_stop_reason():
+    from app.agent.nodes.run_tools import run as run_tools
+
+    state = AgentState(
+        question="kyc?",
+        client_ref="CLI-SCEN-01",
+        selected_tools=["get_client_profile"],
+        tool_round=4,
+        max_tool_rounds=5,
+    )
+    with patch("app.agent.nodes.run_tools.fetch_profile.run"):
+        run_tools(state)
+
+    assert state.tool_round == 5
+    assert state.stop_reason == "max_tool_rounds"

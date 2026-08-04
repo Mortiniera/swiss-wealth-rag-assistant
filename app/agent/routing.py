@@ -38,10 +38,16 @@ def next_step(state: AgentState) -> str:
         return STEP_REWRITE
 
     if state.step == STEP_SELECT_TOOLS:
+        # Empty selection ends the tool loop (enough evidence / no tools needed).
+        if not state.selected_tools:
+            return STEP_REWRITE
         return STEP_RUN_TOOLS
 
     if state.step == STEP_RUN_TOOLS:
-        return STEP_REWRITE
+        # Continue the ReAct loop until the round cap; selector may still stop earlier.
+        if state.tool_round >= state.max_tool_rounds:
+            return STEP_REWRITE
+        return STEP_SELECT_TOOLS
 
     if state.step == STEP_REWRITE:
         return STEP_GENERATE

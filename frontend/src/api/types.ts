@@ -12,6 +12,7 @@ export type EvidenceItem = {
   value: string;
   source:
     | "client_profile"
+    | "account_summary"
     | "account_restrictions"
     | "recent_transactions"
     | "open_service_requests"

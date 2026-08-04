@@ -19,9 +19,11 @@ from app.database.models import (
     Employee,
     Holding,
     Household,
+    Interaction,
     KYCProfile,
     Portfolio,
     Role,
+    ServiceRequest,
     SuitabilityProfile,
     Transaction,
 )
@@ -301,6 +303,28 @@ def _seed_transactions(
     return txn_seq - 1
 
 
+def kyc_document_expiry_for_status(
+    status: str,
+    *,
+    today: date,
+    rng: random.Random,
+) -> date:
+    """
+    Pick a passport expiry that matches the KYC status story.
+
+    ``expired`` always lands in the past; ``valid`` always in the future;
+    ``incomplete`` / ``invalid`` stay near-term (package gap, not expiry theatre).
+    """
+    normalized = (status or "").lower()
+    if normalized == "expired":
+        return today - timedelta(days=rng.randint(1, 180))
+    if normalized in {"incomplete", "invalid"}:
+        return today + timedelta(days=rng.randint(7, 60))
+    if normalized == "refresh_due":
+        return today + timedelta(days=rng.randint(1, 45))
+    return today + timedelta(days=rng.randint(90, 800))
+
+
 def _seed_client_profiles(
     session: Session,
     rng: random.Random,
@@ -309,17 +333,20 @@ def _seed_client_profiles(
     now: datetime,
 ) -> None:
     """Insert KYC, suitability, and communication preference rows per client."""
+    today = now.date()
     for client in clients:
+        kyc_status = rng.choice(
+            ["valid", "valid", "valid", "expired", "incomplete"]
+        )
         session.add(
             KYCProfile(
                 id=uuid.uuid4(),
                 client_id=client.id,
-                status=rng.choice(
-                    ["valid", "valid", "valid", "expired", "incomplete"]
-                ),
+                status=kyc_status,
                 document_type="passport",
-                document_expiry=date.today()
-                + timedelta(days=rng.randint(-90, 800)),
+                document_expiry=kyc_document_expiry_for_status(
+                    kyc_status, today=today, rng=rng
+                ),
                 last_reviewed_at=now - timedelta(days=rng.randint(10, 400)),
                 notes="Synthetic KYC profile",
             )
@@ -356,6 +383,85 @@ def _seed_client_profiles(
                 language=rng.choice(["en", "fr", "de"]),
             )
         )
+
+
+def _seed_ops_activity(
+    session: Session,
+    rng: random.Random,
+    clients: list[Client],
+    employees: list[Employee],
+    *,
+    now: datetime,
+    fraction: float = 0.12,
+) -> dict[str, int]:
+    """
+    Sprinkle open service requests + interactions on a subset of bulk clients.
+
+    Curated CLI-SCEN-* rows still own the flagship ticket stories; this keeps
+    random book browsing from looking empty in SR / interaction panels.
+    """
+    if not clients or not employees:
+        return {"service_requests": 0, "interactions": 0}
+
+    assignees = employees
+    sr_count = 0
+    ix_count = 0
+    seq = 1
+
+    for client in clients:
+        if rng.random() >= fraction:
+            continue
+
+        assignee = rng.choice(assignees)
+        request_type = rng.choice(
+            ["enquiry", "follow_up", "complaint", "kyc_refresh"]
+        )
+        subject = {
+            "enquiry": "General account enquiry",
+            "follow_up": "Ops follow-up required",
+            "complaint": "Fee or service complaint",
+            "kyc_refresh": "KYC document refresh chase",
+        }[request_type]
+
+        sr = ServiceRequest(
+            id=uuid.uuid4(),
+            request_code=f"SRQ-BULK-{seq:05d}",
+            client_id=client.id,
+            request_type=request_type,
+            status="open",
+            priority=rng.choice(["low", "medium", "high"]),
+            subject=subject,
+            opened_at=now - timedelta(days=rng.randint(2, 40)),
+            sla_due_at=now + timedelta(days=rng.randint(-3, 14)),
+            resolved_at=None,
+            assigned_employee_id=assignee.id,
+        )
+        session.add(sr)
+        session.flush()
+        sr_count += 1
+
+        inbound = rng.random() < 0.55
+        interaction = Interaction(
+            id=uuid.uuid4(),
+            client_id=client.id,
+            employee_id=None if inbound else assignee.id,
+            channel=rng.choice(["email", "phone", "secure_message"]),
+            direction="inbound" if inbound else "outbound",
+            subject=f"Note on {subject.lower()}",
+            summary=(
+                "Client reached out; case remains open pending ops review."
+                if inbound
+                else "Bank noted follow-up on the open service request."
+            ),
+            occurred_at=now - timedelta(days=rng.randint(1, 20)),
+            related_service_request_id=sr.id,
+            status="awaiting_reply" if inbound else "logged",
+        )
+        session.add(interaction)
+        ix_count += 1
+        seq += 1
+
+    return {"service_requests": sr_count, "interactions": ix_count}
 
 
 def _seed_audit_marker(
@@ -420,6 +526,7 @@ def seed_database(
     txn_count = _seed_transactions(session, rng, accounts, now=now)
 
     _seed_client_profiles(session, rng, clients, now=now)
+    ops_stats = _seed_ops_activity(session, rng, clients, employees, now=now)
 
     _seed_audit_marker(
         session,
@@ -445,5 +552,7 @@ def seed_database(
         "clients": len(clients) + scenario_stats["scenario_clients"],
         "accounts": len(accounts) + scenario_stats["scenario_accounts"],
         "transactions": txn_count,
+        "service_requests": ops_stats["service_requests"],
+        "interactions": ops_stats["interactions"],
         "scenario_clients": scenario_stats["scenario_clients"],
     }
