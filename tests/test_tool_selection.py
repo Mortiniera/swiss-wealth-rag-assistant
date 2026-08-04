@@ -53,11 +53,30 @@ def test_heuristic_pending_transfer():
     assert "get_recent_transactions" in picks
 
 
+def test_heuristic_portfolio_holdings():
+    picks = heuristic_tools(
+        "Why does the client's portfolio look weaker — what holdings are on file?"
+    )
+    assert "get_account_summary" in picks
+    assert "get_account_restrictions" not in picks
+
+
 def test_heuristic_awaiting_reply():
     picks = heuristic_tools(
         "The client emailed in and nobody replied — what's on the thread?"
     )
     assert "get_interaction_history" in picks
+
+
+def test_normalize_excludes_already_called_tools():
+    selected = normalize_selected_tools(
+        ["get_client_profile", "get_recent_transactions"],
+        max_tools=1,
+        ensure_profile_if_any=False,
+        fallback_if_empty=False,
+        exclude=["get_client_profile"],
+    )
+    assert selected == ["get_recent_transactions"]
 
 
 def test_merge_empty_without_fallback_stays_empty():

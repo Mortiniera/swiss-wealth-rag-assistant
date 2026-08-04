@@ -1,19 +1,22 @@
-"""Read-only tool: load a slim Helvetia client profile."""
+"""Read-only tool: load account / holdings snapshot for a Helvetia client."""
 
 from __future__ import annotations
+
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.schemas.clients import AccountSummaryOut
 from app.services.actor_read import actor_can_access_client, get_employee_by_code
-from app.services.client_read import build_client_out, get_client_by_ref
+from app.services.client_read import get_client_by_ref, list_client_account_summaries
 from app.tools.base import ToolError, ToolResult, run_with_timeout
 
-TOOL_NAME = "get_client_profile"
+TOOL_NAME = "get_account_summary"
 
 
-class GetClientProfileInput(BaseModel):
-    """Typed input for ``get_client_profile``."""
+class GetAccountSummaryInput(BaseModel):
+    """Typed input for ``get_account_summary``."""
 
     client_ref: str = Field(..., min_length=1, description="Client UUID or client_code")
     actor_employee_code: str | None = Field(
@@ -22,36 +25,47 @@ class GetClientProfileInput(BaseModel):
     )
 
 
-def _slim_profile(client_out) -> dict:
-    """Reduce ClientOut to facts useful for grounded answers."""
-    kyc = client_out.kyc_profile
-    suitability = client_out.suitability_profile
-    prefs = client_out.communication_preference
-    primary = client_out.primary_assignment
+def _holding_row(holding) -> dict:
     return {
-        "client_code": client_out.client_code,
-        "full_name": client_out.full_name,
-        "status": client_out.status,
-        "segment": client_out.segment,
-        "residency_country": client_out.residency_country,
-        "kyc_status": kyc.status if kyc else None,
-        "kyc_document_type": kyc.document_type if kyc else None,
-        "kyc_document_expiry": (
-            kyc.document_expiry.isoformat() if kyc and kyc.document_expiry else None
-        ),
-        "suitability_status": suitability.status if suitability else None,
-        "suitability_risk_profile": (
-            suitability.risk_profile if suitability else None
-        ),
-        "preferred_channel": prefs.preferred_channel if prefs else None,
-        "cross_border_ok": prefs.cross_border_ok if prefs else None,
-        "preferred_language": prefs.language if prefs else None,
-        "primary_rm_code": primary.employee_code if primary else None,
-        "primary_rm_name": primary.full_name if primary else None,
+        "asset_symbol": holding.asset_symbol,
+        "asset_name": holding.asset_name,
+        "quantity": str(holding.quantity),
+        "market_value": str(holding.market_value),
+        "currency": holding.currency,
     }
 
 
-def _execute(session: Session, payload: GetClientProfileInput) -> ToolResult:
+def _account_row(account: AccountSummaryOut) -> dict:
+    holdings = [_holding_row(h) for h in account.holdings]
+    total = sum((h.market_value for h in account.holdings), Decimal("0"))
+    return {
+        "account_code": account.account_code,
+        "account_type": account.account_type,
+        "currency": account.currency,
+        "status": account.status,
+        "portfolio_name": account.portfolio_name,
+        "portfolio_as_of": (
+            account.portfolio_as_of.isoformat() if account.portfolio_as_of else None
+        ),
+        "base_currency": account.base_currency,
+        "holdings_count": len(holdings),
+        "holdings_market_value_total": str(total),
+        "holdings": holdings,
+    }
+
+
+def _slim_summary(accounts: list[AccountSummaryOut]) -> dict:
+    """Flatten accounts + holdings into a compact payload for the agent."""
+    rows = [_account_row(account) for account in accounts]
+    holding_count = sum(row["holdings_count"] for row in rows)
+    return {
+        "account_count": len(rows),
+        "holding_count": holding_count,
+        "accounts": rows,
+    }
+
+
+def _execute(session: Session, payload: GetAccountSummaryInput) -> ToolResult:
     client = get_client_by_ref(session, payload.client_ref)
     if client is None:
         return ToolResult(
@@ -87,24 +101,23 @@ def _execute(session: Session, payload: GetClientProfileInput) -> ToolResult:
                 ),
             )
 
-    profile = build_client_out(client)
-    return ToolResult(tool=TOOL_NAME, ok=True, data=_slim_profile(profile))
+    accounts = list_client_account_summaries(session, client)
+    return ToolResult(tool=TOOL_NAME, ok=True, data=_slim_summary(accounts))
 
 
-def get_client_profile(
+def get_account_summary(
     session: Session,
-    payload: GetClientProfileInput | dict,
+    payload: GetAccountSummaryInput | dict,
     *,
     timeout_seconds: float = 5.0,
 ) -> ToolResult:
     """
-    Load a slim client profile with optional Act-as scope enforcement.
+    Load account / holdings snapshot with optional Act-as scope enforcement.
 
-    Never raises for business outcomes — returns ``ToolResult`` with structured errors.
-    Timeouts become ``ToolResult(ok=False, error.code='timeout')``.
+    Empty books return ``ok=True`` with empty lists — never invent holdings.
     """
-    if not isinstance(payload, GetClientProfileInput):
-        payload = GetClientProfileInput.model_validate(payload)
+    if not isinstance(payload, GetAccountSummaryInput):
+        payload = GetAccountSummaryInput.model_validate(payload)
 
     try:
         return run_with_timeout(

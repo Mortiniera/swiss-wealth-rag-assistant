@@ -20,6 +20,15 @@ def _client_out(**overrides):
             document_type="passport",
             document_expiry=date(2024, 1, 1),
         ),
+        "suitability_profile": SimpleNamespace(
+            status="complete",
+            risk_profile="balanced",
+        ),
+        "communication_preference": SimpleNamespace(
+            preferred_channel="email",
+            cross_border_ok=True,
+            language="en",
+        ),
         "primary_assignment": SimpleNamespace(
             employee_code="EMP-0001",
             full_name="Elena Meier",
@@ -49,7 +58,30 @@ def test_get_client_profile_happy_path():
     assert result.data["client_code"] == "CLI-SCEN-01"
     assert result.data["kyc_status"] == "expired"
     assert result.data["kyc_document_expiry"] == "2024-01-01"
+    assert result.data["suitability_status"] == "complete"
+    assert result.data["preferred_channel"] == "email"
     assert result.data["primary_rm_code"] == "EMP-0001"
+
+
+def test_get_client_profile_includes_missing_suitability():
+    session = MagicMock()
+    with patch(
+        "app.tools.get_client_profile.get_client_by_ref",
+        return_value=object(),
+    ), patch(
+        "app.tools.get_client_profile.build_client_out",
+        return_value=_client_out(
+            suitability_profile=SimpleNamespace(status="missing", risk_profile=None),
+        ),
+    ):
+        result = get_client_profile(
+            session,
+            GetClientProfileInput(client_ref="CLI-SCEN-07"),
+        )
+
+    assert result.ok is True
+    assert result.data["suitability_status"] == "missing"
+    assert result.data["suitability_risk_profile"] is None
 
 
 def test_get_client_profile_not_found():
