@@ -31,5 +31,12 @@ class Settings(BaseSettings):
     auto_seed: bool = True
     auto_seed_clients: int = 500
 
+    # Bump when synthetic domain seed data changes; deploys reseed when this exceeds
+    # the version recorded in audit_events (no Render shell required).
+    seed_data_version: int = 0
+
+    # If true, truncate and reseed the banking domain on every API startup.
+    auto_reseed: bool = False
+
 
 settings = Settings()
