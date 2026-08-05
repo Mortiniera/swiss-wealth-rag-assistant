@@ -14,6 +14,7 @@ from app.agent.nodes import (
     fetch_transactions,
 )
 from app.agent.state import AgentState
+from app.observability.tracing import observe, safe_update
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,28 @@ def run(state: AgentState) -> None:
         if module is None:
             logger.warning("Skipping unknown selected tool %r", tool_name)
             continue
-        module.run(state)
+        before_tool = len(state.tool_results)
+        with observe(
+            tool_name,
+            as_type="tool",
+            metadata={
+                "client_ref": state.client_ref,
+                "tool_round": state.tool_round + 1,
+            },
+        ) as tool_span:
+            module.run(state)
+            new_for_tool = state.tool_results[before_tool:]
+            ok = bool(new_for_tool) and all(row.get("ok") for row in new_for_tool)
+            error_code = None
+            if new_for_tool and not ok:
+                err = new_for_tool[-1].get("error") or {}
+                error_code = err.get("code")
+            safe_update(
+                tool_span,
+                metadata={"ok": ok, "error_code": error_code},
+                level="ERROR" if not ok else "DEFAULT",
+                status_message=error_code if not ok else None,
+            )
         ran.append(tool_name)
         if tool_name not in state.tools_called:
             state.tools_called.append(tool_name)

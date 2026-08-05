@@ -7,11 +7,14 @@ import pytest
 
 from app.config import settings
 from app.observability import (
+    extract_usage_details,
+    finish_generation,
     flush_observability,
     get_client,
     init_observability,
     is_enabled,
     observe,
+    observe_generation,
     reset_observability,
 )
 from app.observability import langfuse_client as lf_mod
@@ -208,3 +211,102 @@ def test_handle_question_emits_ask_and_step_spans():
     assert "question" not in root_meta
     assert root_meta["actor_employee_code"] == "EMP-RM-01"
     assert root_meta["role"] == "relationship_manager"
+
+
+def test_extract_usage_details_from_dict_raw():
+    response = MagicMock()
+    response.raw = {"usage": {"prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16}}
+    assert extract_usage_details(response) == {"input": 12, "output": 4, "total": 16}
+
+
+def test_extract_usage_details_missing_returns_none():
+    response = MagicMock()
+    response.raw = None
+    response.additional_kwargs = {}
+    assert extract_usage_details(response) is None
+
+
+def test_observe_generation_uses_generation_type():
+    mock_span = MagicMock(name="gen")
+
+    @contextmanager
+    def _cm(**_kwargs):
+        yield mock_span
+
+    mock_client = MagicMock()
+    mock_client.start_as_current_observation.side_effect = (
+        lambda **kwargs: _cm(**kwargs)
+    )
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    with observe_generation("intent_llm", prompt_length=100) as span:
+        assert span is mock_span
+
+    assert (
+        mock_client.start_as_current_observation.call_args.kwargs["as_type"]
+        == "generation"
+    )
+
+
+def test_finish_generation_records_usage_and_output():
+    mock_span = MagicMock()
+    response = MagicMock()
+    response.text = "RAG_QUERY"
+    response.raw = {"usage": {"prompt_tokens": 50, "completion_tokens": 2}}
+
+    finish_generation(
+        mock_span,
+        response,
+        elapsed_s=1.234,
+        prompt_length=500,
+        output_max_len=32,
+    )
+
+    mock_span.update.assert_called()
+    kwargs = mock_span.update.call_args.kwargs
+    assert kwargs["usage_details"] == {"input": 50, "output": 2}
+    assert kwargs["output"] == "RAG_QUERY"
+    assert kwargs["metadata"]["prompt_length"] == 500
+
+
+def test_run_tools_emits_per_tool_spans():
+    from app.agent.nodes.run_tools import run as run_tools_node
+    from app.agent.state import AgentState
+
+    mock_span = MagicMock()
+
+    @contextmanager
+    def _cm(**kwargs):
+        yield mock_span
+
+    mock_client = MagicMock()
+    mock_client.start_as_current_observation.side_effect = (
+        lambda **kwargs: _cm(**kwargs)
+    )
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    state = AgentState(
+        question="Regarding CLI-SCEN-01: status?",
+        client_ref="CLI-SCEN-01",
+        selected_tools=["get_client_profile"],
+    )
+
+    def _fake_profile(state):
+        state.tool_results.append(
+            {"tool": "get_client_profile", "ok": True, "data": {"client_ref": "CLI-SCEN-01"}}
+        )
+
+    with patch.dict(
+        "app.agent.nodes.run_tools._TOOL_MODULES",
+        {"get_client_profile": MagicMock(run=_fake_profile)},
+    ):
+        run_tools_node(state)
+
+    tool_call = mock_client.start_as_current_observation.call_args
+    assert tool_call.kwargs["name"] == "get_client_profile"
+    assert tool_call.kwargs["as_type"] == "tool"
+    assert tool_call.kwargs["metadata"]["client_ref"] == "CLI-SCEN-01"
+    mock_span.update.assert_called()
+    assert mock_span.update.call_args.kwargs["metadata"]["ok"] is True

@@ -133,7 +133,22 @@ def _run_node_with_span(step: str, node: NodeFn, state: AgentState) -> None:
                 },
             )
         elif step == STEP_SEARCH_POLICIES:
-            safe_update(span, metadata={"policy_hit_count": len(state.policy_hits)})
+            last_round = state.round_trace[-1] if state.round_trace else {}
+            round_scores = [
+                hit.get("score")
+                for hit in state.policy_hits
+                if hit.get("score") is not None
+            ]
+            safe_update(
+                span,
+                metadata={
+                    "policy_hit_count": len(state.policy_hits),
+                    "hits_this_round": last_round.get("policy_hits"),
+                    "hits_added": last_round.get("policy_hits_new"),
+                    "top_score": max(round_scores) if round_scores else None,
+                    "query_length": len(last_round.get("policy_query") or ""),
+                },
+            )
         elif step == STEP_AGENT_TURN and state.last_decision:
             decision = state.last_decision
             safe_update(
