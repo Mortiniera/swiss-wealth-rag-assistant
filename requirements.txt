@@ -7,6 +7,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
 attrs==26.1.0
+backoff==2.2.1
 banks==2.4.2
 bcrypt==5.0.0
 build==1.5.0
@@ -47,6 +48,7 @@ joblib==1.5.3
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 kubernetes==36.0.2
+langfuse==4.14.2
 llama-index==0.14.22
 llama-index-core==0.14.22
 llama-index-embeddings-openai==0.6.0
@@ -68,12 +70,13 @@ numpy==2.4.6
 oauthlib==3.3.1
 onnxruntime==1.16.3
 openai==2.41.0
-opentelemetry-api==1.42.1
-opentelemetry-exporter-otlp-proto-common==1.42.1
-opentelemetry-exporter-otlp-proto-grpc==1.42.1
-opentelemetry-proto==1.42.1
-opentelemetry-sdk==1.42.1
-opentelemetry-semantic-conventions==0.63b1
+opentelemetry-api==1.44.0
+opentelemetry-exporter-otlp-proto-common==1.44.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0
+opentelemetry-proto==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-semantic-conventions==0.65b0
 orjson==3.11.9
 overrides==7.7.0
 packaging==26.2

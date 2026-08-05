@@ -7,5 +7,6 @@ export type Message = {
   content: string;
   sources?: Source[];
   evidence?: EvidenceItem[];
+  traceUrl?: string;
   timestamp: string;
 };

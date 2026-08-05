@@ -9,6 +9,7 @@ from llama_index.core import Settings as LlamaSettings
 
 from app.database.session import SessionLocal
 from app.models.schemas import ChatMessage
+from app.observability.tracing import finish_generation, observe_generation
 from app.rag.common import configure_llm
 from app.retrieval import RetrievalFilters, RetrievalHit, retrieve as retrieve_policies
 
@@ -219,7 +220,15 @@ def generate_answer(
         history,
         has_structured_facts=bool(structured_facts),
     )
-    response = LlamaSettings.llm.complete(prompt)
+    llm_start = time.perf_counter()
+    with observe_generation("answer_llm", prompt_length=len(prompt)) as gen:
+        response = LlamaSettings.llm.complete(prompt)
+        finish_generation(
+            gen,
+            response,
+            elapsed_s=time.perf_counter() - llm_start,
+            prompt_length=len(prompt),
+        )
     elapsed = time.perf_counter() - start
 
     logger.info(

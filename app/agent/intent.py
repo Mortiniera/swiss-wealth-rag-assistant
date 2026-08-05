@@ -1,7 +1,10 @@
 from typing import Literal
 
+import time
+
 from llama_index.core import Settings as LlamaSettings
 from app.models.schemas import ChatMessage
+from app.observability.tracing import finish_generation, observe_generation
 from app.rag.common import configure_llm
 from app.rag.generator import _format_history
 
@@ -56,7 +59,16 @@ def classify_intent(question: str, history: list[ChatMessage] | None = None) -> 
     history = history or []
     configure_llm()
     prompt = _build_intent_prompt(question, history)
-    response = LlamaSettings.llm.complete(prompt)
+    start = time.perf_counter()
+    with observe_generation("intent_llm", prompt_length=len(prompt)) as gen:
+        response = LlamaSettings.llm.complete(prompt)
+        finish_generation(
+            gen,
+            response,
+            elapsed_s=time.perf_counter() - start,
+            prompt_length=len(prompt),
+            output_max_len=32,
+        )
     label = response.text.strip().upper()
 
     if label not in VALID_INTENTS:

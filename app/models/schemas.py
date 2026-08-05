@@ -68,6 +68,7 @@ class AskResponse(BaseModel):
     answer: str
     sources: list[Source]
     evidence: list[EvidenceItem] = Field(default_factory=list)
+    trace_url: str | None = None
 
 
 class RootResponse(BaseModel):

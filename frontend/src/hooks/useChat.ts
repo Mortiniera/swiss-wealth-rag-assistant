@@ -48,6 +48,7 @@ export function useChat(clientContext: SelectedClientContext | null = null) {
         content: data.answer,
         sources: data.sources,
         evidence: data.evidence ?? [],
+        traceUrl: data.trace_url,
         timestamp: nowIso(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
