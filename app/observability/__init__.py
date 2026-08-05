@@ -8,6 +8,7 @@ from app.observability.langfuse_client import (
 )
 from app.observability.tracing import (
     current_trace_id,
+    dev_trace_url,
     extract_usage_details,
     finish_generation,
     flush_observability,
@@ -18,6 +19,7 @@ from app.observability.tracing import (
 
 __all__ = [
     "current_trace_id",
+    "dev_trace_url",
     "extract_usage_details",
     "finish_generation",
     "flush_observability",

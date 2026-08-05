@@ -24,6 +24,7 @@ from app.agent.state import AgentState
 from app.models.schemas import ChatMessage
 from app.observability.tracing import (
     current_trace_id,
+    dev_trace_url,
     flush_observability,
     observe,
     safe_update,
@@ -226,6 +227,10 @@ def handle_question(
             current_trace_id(),
         )
         result = _finalize(state)
+        trace_id = current_trace_id()
 
     flush_observability()
+    trace_url = dev_trace_url(trace_id)
+    if trace_url:
+        result["trace_url"] = trace_url
     return result

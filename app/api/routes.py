@@ -68,7 +68,7 @@ def ingest(request: IngestRequest):
         session.close()
 
 
-@router.post("/ask", response_model=AskResponse)
+@router.post("/ask", response_model=AskResponse, response_model_exclude_none=True)
 def ask(
     request: AskRequest,
     actor: Employee | None = Depends(get_optional_actor),

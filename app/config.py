@@ -43,5 +43,8 @@ class Settings(BaseSettings):
     langfuse_secret_key: str = ""
     langfuse_base_url: str = ""
 
+    # Deployment environment: ``dev`` enables debug-only API fields (e.g. Langfuse trace URLs).
+    app_env: str = "dev"
+
 
 settings = Settings()

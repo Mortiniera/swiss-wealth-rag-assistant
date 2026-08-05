@@ -134,6 +134,30 @@ def finish_generation(
     safe_update(span, **kwargs)
 
 
+def dev_trace_url(trace_id: str | None = None) -> str | None:
+    """
+    Return a Langfuse trace URL only in ``dev`` when tracing is enabled.
+
+    Production responses must never include trace links — enforced server-side.
+    """
+    if settings.app_env.strip().lower() != "dev":
+        return None
+
+    client = get_client()
+    if client is None:
+        return None
+
+    tid = trace_id or current_trace_id()
+    if not tid:
+        return None
+
+    try:
+        return client.get_trace_url(trace_id=tid)
+    except Exception:
+        logger.exception("Failed to build Langfuse trace URL")
+        return None
+
+
 def current_trace_id() -> str | None:
     """Return the active Langfuse trace id, if any."""
     client = get_client()

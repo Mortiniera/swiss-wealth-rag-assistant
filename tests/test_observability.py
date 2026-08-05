@@ -7,6 +7,7 @@ import pytest
 
 from app.config import settings
 from app.observability import (
+    dev_trace_url,
     extract_usage_details,
     finish_generation,
     flush_observability,
@@ -211,6 +212,98 @@ def test_handle_question_emits_ask_and_step_spans():
     assert "question" not in root_meta
     assert root_meta["actor_employee_code"] == "EMP-RM-01"
     assert root_meta["role"] == "relationship_manager"
+
+
+def test_dev_trace_url_none_in_prod(monkeypatch):
+    monkeypatch.setattr(settings, "app_env", "prod")
+    mock_client = MagicMock()
+    mock_client.get_trace_url.return_value = "https://cloud.langfuse.com/project/x/traces/y"
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    assert dev_trace_url("trace-123") is None
+    mock_client.get_trace_url.assert_not_called()
+
+
+def test_dev_trace_url_returns_url_in_dev(monkeypatch):
+    monkeypatch.setattr(settings, "app_env", "dev")
+    mock_client = MagicMock()
+    mock_client.get_trace_url.return_value = "https://cloud.langfuse.com/project/x/traces/y"
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    assert dev_trace_url("trace-123") == "https://cloud.langfuse.com/project/x/traces/y"
+    mock_client.get_trace_url.assert_called_once_with(trace_id="trace-123")
+
+
+def test_handle_question_includes_trace_url_in_dev(monkeypatch):
+    from app.agent.orchestrator import handle_question
+
+    monkeypatch.setattr(settings, "app_env", "dev")
+
+    @contextmanager
+    def _cm(**kwargs):
+        yield MagicMock()
+
+    mock_client = MagicMock()
+    mock_client.start_as_current_observation.side_effect = (
+        lambda **kwargs: _cm(**kwargs)
+    )
+    mock_client.get_current_trace_id.return_value = "trace-dev-1"
+    mock_client.get_trace_url.return_value = "https://cloud.langfuse.com/project/x/traces/trace-dev-1"
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    def _fake_classify(state):
+        state.intent = "ASSISTANT_META"
+
+    def _fake_respond_meta(state):
+        state.answer = "I am Helvetia ops assistant."
+        state.sources = []
+        state.status = "completed"
+
+    with patch.dict(
+        "app.agent.orchestrator.NODES",
+        {"classify": _fake_classify, "respond_meta": _fake_respond_meta},
+    ):
+        result = handle_question("What can you do?")
+
+    assert result.get("trace_url") == "https://cloud.langfuse.com/project/x/traces/trace-dev-1"
+
+
+def test_handle_question_omits_trace_url_in_prod(monkeypatch):
+    from app.agent.orchestrator import handle_question
+
+    monkeypatch.setattr(settings, "app_env", "prod")
+
+    @contextmanager
+    def _cm(**kwargs):
+        yield MagicMock()
+
+    mock_client = MagicMock()
+    mock_client.start_as_current_observation.side_effect = (
+        lambda **kwargs: _cm(**kwargs)
+    )
+    mock_client.get_current_trace_id.return_value = "trace-prod-1"
+    mock_client.get_trace_url.return_value = "https://cloud.langfuse.com/project/x/traces/trace-prod-1"
+    lf_mod._client = mock_client
+    lf_mod._enabled = True
+
+    def _fake_classify(state):
+        state.intent = "ASSISTANT_META"
+
+    def _fake_respond_meta(state):
+        state.answer = "I am Helvetia ops assistant."
+        state.sources = []
+        state.status = "completed"
+
+    with patch.dict(
+        "app.agent.orchestrator.NODES",
+        {"classify": _fake_classify, "respond_meta": _fake_respond_meta},
+    ):
+        result = handle_question("What can you do?")
+
+    assert "trace_url" not in result
 
 
 def test_extract_usage_details_from_dict_raw():
