@@ -50,6 +50,7 @@ See [demo scenarios](docs/demo-scenarios/scenarios.md) for all 15 curated client
 | Knowledge / vectors | pgvector (hybrid: cosine + Postgres FTS + RRF) |
 | Embeddings | OpenAI `text-embedding-3-small` |
 | LLM | OpenAI (configurable via `LLM_MODEL`) |
+| Observability | Langfuse (opt-in; traces per `/ask` when keys set) |
 | Frontend | React, TypeScript, Vite (see `frontend/`) |
 
 ## How it works
@@ -126,7 +127,7 @@ Policy-only questions skip the agent loop. Client-case questions (`client_ref` i
 | Feature | Description |
 | ------- | ----------- |
 | **Operations workspace** | Client directory (open-items: KYC / restrictions / pending transfers / SRs), profile/KYC, accounts with holdings, transactions, interactions, and policy catalog with a docked assistant. |
-| **Bounded ReAct agent (v0.7)** | Verify-then-answer loop: structured turns call client tools and/or policy search before generating a case triage response. |
+| **Bounded ReAct agent** | Verify-then-answer loop: structured turns call client tools and/or policy search before generating a case triage response. |
 | **Evidence chips** | Book facts surfaced on answers (KYC, restrictions, pending txns, open SRs, interactions, holdings) — separate from policy source citations. |
 | **Demo Act-as identity** | Pick an employee (`X-Helvetia-Actor`); RM books are assigned-only; policies/`/ask` respect `allowed_roles`. Not login — full RBAC later. |
 | **Selected-client context** | Opening a client tags the assistant dock; the agent extracts `client_ref` and runs the tool loop. |
@@ -135,6 +136,30 @@ Policy-only questions skip the agent loop. Client-case questions (`client_ref` i
 | **Intent routing** | Wealth/case questions go to RAG + tools; capability and off-topic queries skip retrieval. |
 | **Grounded answers** | Responses use structured facts and retrieved policy chunks only; empty-book honesty (no invented pending transfers or tickets). |
 | **Source attribution** | Policy hits include department, document, chunk ID, RRF score; clickable in the UI policy reader. |
+| **Langfuse tracing** | Opt-in end-to-end `/ask` traces: workflow steps, per-tool spans, LLM generations with tokens/cost. Dev UI shows a trace link when `APP_ENV=dev`. |
+
+## Observability (Langfuse)
+
+Tracing is **optional**. Without Langfuse keys the API behaves exactly as before.
+
+**Enable locally** (copy from `.env.example`):
+
+```bash
+APP_ENV=dev
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com   # EU; use https://us.cloud.langfuse.com for US
+```
+
+After `docker compose up --build`, each `/ask` creates a trace in your Langfuse project. In **dev**, the assistant shows **View Langfuse trace** under the answer (opens the full timeline: tools, generations, metadata).
+
+![Dev — Langfuse trace link in assistant](docs/assets/obs-trace-link-dev.png)
+
+![Langfuse — ask trace detail](docs/assets/obs-langfuse-trace-detail.png)
+
+**Production (Render):** set `APP_ENV=prod`. Langfuse keys may stay set for backend tracing, but `/ask` **never** returns `trace_url` — enforced server-side, not UI-only.
+
+See [ADR-009](docs/adr/ADR-009-langfuse-tracing.md) and [release v0.8](docs/releases/v0.8.md).
 
 ## Data corpus
 
@@ -146,21 +171,33 @@ Read-only structured banking data (clients, accounts, scenarios) lives in Postgr
 
 ## API
 
-| Method | Endpoint  | Description |
-| ------ | --------- | ----------- |
-| GET    | `/`       | Service metadata (name, docs, health) |
-| GET    | `/health` | Health check |
-| GET    | `/actors` | Demo employees for Act-as picker |
-| GET    | `/actors/{code}/workspace` | Scope + panel layout for an actor |
-| GET    | `/clients` | Client directory (scoped when `X-Helvetia-Actor` set) |
-| GET    | `/policies` | Policy catalog (role-filtered when actor set) |
-| POST   | `/ingest` | Ingest Helvetia policies into Postgres + pgvector |
-| POST   | `/ask`    | Grounded policy Q&A with sources (role-filtered when actor set) |
+Interactive OpenAPI docs: **`/docs`** when the API is running (schemas match the current code).
 
-### Example
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| GET | `/` | Service metadata |
+| GET | `/health` | Health check |
+| GET | `/actors` | Demo employees for Act-as picker |
+| GET | `/actors/{code}/workspace` | Scope + panel layout for an actor |
+| GET | `/clients` | Client directory (scoped when `X-Helvetia-Actor` set) |
+| GET | `/clients/{client_ref}` | Client profile |
+| GET | `/clients/{client_ref}/accounts` | Accounts, restrictions, holdings |
+| GET | `/clients/{client_ref}/transactions` | Recent transactions |
+| GET | `/clients/{client_ref}/interactions` | Interaction history |
+| GET | `/clients/{client_ref}/service-requests` | Open service requests |
+| GET | `/policies` | Policy catalog (role-filtered when actor set) |
+| GET | `/policies/{document_id}` | Policy document body + metadata |
+| POST | `/ingest` | Ingest policies from `data/policies/` into Postgres + pgvector |
+| POST | `/ask` | Assistant Q&A: answer, policy `sources`, tool `evidence` |
+
+Optional header on workspace routes: **`X-Helvetia-Actor: EMP-0001`** (demo employee code).
+
+### `POST /ask` examples
+
+**Policy follow-up** (no client context — agent loop skipped):
 
 ```bash
-curl -X POST http://localhost:8000/ask \
+curl -s -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
   -d '{
     "question": "And if the identity document is expired?",
@@ -171,108 +208,117 @@ curl -X POST http://localhost:8000/ask \
   }'
 ```
 
-Example response:
+**Client case** (opens the ReAct loop — use a curated scenario client):
+
+```bash
+curl -s -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -H "X-Helvetia-Actor: EMP-0001" \
+  -d '{
+    "question": "Regarding Helvetia client CLI-SCEN-01 (Helena Vogt): Why is the outbound transfer delayed?"
+  }'
+```
+
+Typical response shape:
 
 ```json
 {
-  "answer": "If a passport is past its expiry date, activity that increases risk must be held pending refresh unless Compliance grants a time-limited exception. [1]",
+  "answer": "...",
   "sources": [
     {
       "institution": "Compliance",
       "document_title": "KYC Refresh Policy",
       "source_file": "data/policies/POL-KYC-002.md",
-      "chunk_id": "abc123",
-      "score": 0.016
+      "chunk_id": "…",
+      "score": 0.016,
+      "text": "…"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "KYC",
+      "value": "Expired — refresh due",
+      "source": "client_profile"
     }
   ]
 }
 ```
 
-If retrieval returns no hits:
+`evidence` is populated when the agent loop ran client tools; policy-only questions may return an empty array. With Langfuse enabled and `APP_ENV=dev`, responses may also include `trace_url` (omitted in production).
+
+If retrieval returns no hits and there are no tool facts:
 
 > I could not find enough information in the indexed sources to answer this confidently.
 
-**Out-of-scope questions** (e.g. sports, weather) are refused before retrieval. **Meta questions** (e.g. *"What can you do?"*) return a fixed capability description with no sources.
-
-### Swagger UI
-
-![Swagger UI](docs/assets/swagger-ui.png)
-
-![Ask response in Swagger](docs/assets/ask-response.png)
+**Out-of-scope** questions (sports, weather, etc.) are refused before retrieval. **Meta** questions (*"What can you do?"*) return a fixed capability blurb with no sources.
 
 ## Local setup
 
-**Preferred — Docker Compose (API + Postgres + frontend + pgAdmin):**
+**Preferred — Docker Compose** (API + Postgres + frontend + pgAdmin):
 
 ```bash
 cp .env.example .env
-# Add OPENAI_API_KEY to .env
+# Required: OPENAI_API_KEY
+# Defaults: APP_ENV=dev, AUTO_SEED=true, AUTO_INGEST=true
+# Optional: LANGFUSE_* for tracing (see Observability above)
 
 docker compose up --build
 ```
 
 | Service | URL |
 | ------- | --- |
-| Chat UI | http://localhost:5173 |
-| API / Swagger | http://localhost:8000/docs |
+| Operations UI | http://localhost:5173 |
+| API / OpenAPI | http://localhost:8000/docs |
 | pgAdmin | http://localhost:5050 |
 
-On first run (or after an empty DB), seed clients and ingest policies:
+On **first boot** with an empty database, the API runs migrations, auto-seeds the banking domain (`AUTO_SEED`), and auto-ingests policies (`AUTO_INGEST`, requires `OPENAI_API_KEY`). Curated `CLI-SCEN-*` scenarios are included in the seed.
+
+**Manual refresh** (optional — force reseed or re-embed):
 
 ```bash
 docker compose exec api python scripts/seed_db.py
 docker compose exec api python scripts/ingest_policies.py
 ```
 
-The API container runs `alembic upgrade head` on start. Production UI remains on Vercel; the Compose frontend is Vite **dev** for local DX only.
+Or bump `SEED_DATA_VERSION` in `.env` / Render env and restart — the API reseeds once when the version exceeds the last applied marker (see `app/main.py` startup logic).
 
-**Alternative — Python venv (API only):**
+Production UI is on Vercel; the Compose `frontend` service is Vite **dev** for local work only.
+
+**Alternative — Python venv** (API only):
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp .env.example .env   # add OPENAI_API_KEY
 
-cp .env.example .env
-# Add OPENAI_API_KEY to .env
-
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Then run the UI from `frontend/` (`npm run dev`) or point Compose at an already-running API.
+Run the UI from `frontend/` (`npm install && npm run dev`) with `VITE_API_URL=http://localhost:8000`.
 
 ### Tests
 
 ```bash
-pip install -r requirements.txt -r requirements-dev.txt
 pytest
-```
-
-Or via Compose (does not start by default — use the `test` profile):
-
-```bash
-docker compose --profile test run --rm test
+# or: docker compose --profile test run --rm test
 ```
 
 ### Evaluation
 
-Helvetia policy golden set (`eval/cases.json`, ≥40 cases): hybrid **retrieval** metrics (Recall@k, MRR, active-doc / filter traps) plus a thin **`/ask`** suite (meta, out-of-scope, RAG smokes).
-
-Prerequisites: migrations applied, policies ingested, `OPENAI_API_KEY` set. For the ask suite, the API must be reachable.
+Helvetia policy golden set (`eval/cases.json`): hybrid **retrieval** metrics plus a thin **`/ask`** suite. Requires migrations, ingested policies, and `OPENAI_API_KEY`.
 
 ```bash
-# Local
 python eval/run_eval.py
 EVAL_SUITES=retrieval python eval/run_eval.py
-
-# Compose one-shot (api + postgres already up and ingested)
-docker compose --profile eval run --rm eval
+# Compose: docker compose --profile eval run --rm eval
 ```
 
-## Docker
+## Docker image (API)
+
+For a standalone API container (Compose is recommended locally):
 
 ```bash
-docker compose up --build
 docker build -t swiss-wealth-rag .
 docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 ```
@@ -282,9 +328,9 @@ docker run -p 8000:8000 --env-file .env swiss-wealth-rag
 **Backend (Render)** — deploy from the `main` branch.
 
 1. Connect the GitHub repo; set deploy branch to `main`
-2. Set environment variables from `.env.example` (at minimum `OPENAI_API_KEY` and `DATABASE_URL` for hosted Postgres)
+2. Set environment variables from `.env.example` (at minimum `OPENAI_API_KEY` and `DATABASE_URL` for hosted Postgres). Set **`APP_ENV=prod`** on Render. Langfuse keys are optional (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`) — tracing runs when set; trace links are never exposed in prod.
 3. Use the repo `Dockerfile` (migrate on start; leave Render Docker Command empty)
-4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh. With `AUTO_SEED=true` (default), an empty banking domain is seeded once. When seed scripts change (e.g. distinct scenario holdings), set `SEED_DATA_VERSION=8` on Render before deploy — the API truncates and reseeds the banking domain once on startup (no Render Shell required).
+4. With `AUTO_INGEST=true` (default), an empty knowledge store is filled on first boot; use `POST /ingest` to force a refresh. With `AUTO_SEED=true` (default), an empty banking domain is seeded once. When seed scripts change, bump `SEED_DATA_VERSION` on Render before deploy — the API truncates and reseeds the banking domain once on startup (no Render shell required).
 
 **Frontend (Vercel)** — deploy the `frontend/` directory. Set `VITE_API_URL` to the Render API URL. Add the Vercel origin to CORS in `app/main.py`.
 
@@ -303,15 +349,22 @@ app/
     policy_ingest.py   # Chunk, embed, upsert to Postgres
     generator.py       # Grounded LLM answers
     common.py          # Embedding/LLM helpers
+  observability/       # Opt-in Langfuse init + tracing helpers
   database/            # SQLAlchemy models, seed
   config.py
   main.py
 data/policies/         # Helvetia internal policy corpus
 scripts/               # seed_db.py, ingest_policies.py
-frontend/              # React chat UI
-docs/                  # Architecture + ADRs
+frontend/              # React operations workspace UI
+docs/                  # Architecture, ADRs, releases
 tests/
 ```
+
+## Documentation
+
+- [System architecture](docs/architecture/system.md) · [Domain](docs/architecture/domain.md) · [Demo scenarios](docs/demo-scenarios/scenarios.md)
+- [Release notes](docs/releases/) (latest: [v0.8](docs/releases/v0.8.md))
+- [ADRs](docs/adr/) (latest: [ADR-009 Langfuse tracing](docs/adr/ADR-009-langfuse-tracing.md))
 
 ## Limitations
 

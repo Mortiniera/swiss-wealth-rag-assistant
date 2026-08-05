@@ -159,7 +159,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Swiss Wealth RAG Assistant",
     description="Helvetia Private Bank internal operations assistant (policy RAG + structured client APIs)",
-    version="0.5.0",
+    version="0.8.0",
     lifespan=lifespan
 )
 
