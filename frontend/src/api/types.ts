@@ -23,6 +23,7 @@ export type AskResponse = {
   answer: string;
   sources: Source[];
   evidence?: EvidenceItem[];
+  trace_url?: string;
 };
 
 export type ChatMessage = {

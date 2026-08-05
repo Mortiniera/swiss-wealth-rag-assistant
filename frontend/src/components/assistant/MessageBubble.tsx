@@ -26,6 +26,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             sourceCount={sourceCount}
           />
           <EvidenceChips evidence={evidence} />
+          {!isUser && message.traceUrl && (
+            <p className="mt-2 text-[0.6875rem]">
+              <a
+                href={message.traceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-brand underline decoration-brand/40 underline-offset-2 hover:decoration-brand"
+              >
+                View Langfuse trace
+              </a>
+            </p>
+          )}
         </div>
       )}
 

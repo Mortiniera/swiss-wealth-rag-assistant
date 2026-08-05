@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from llama_index.core import Settings as LlamaSettings
@@ -21,6 +22,7 @@ from app.agent.turn_decision import (
     parse_turn_decision,
     search_policies_decision,
 )
+from app.observability.tracing import finish_generation, observe_generation, safe_update
 from app.rag.common import configure_llm
 from app.rag.generator import _format_history
 
@@ -226,17 +228,29 @@ def run(state: AgentState) -> None:
     decision: TurnDecision | None = None
     llm_failed = False
 
+    gen = None
     try:
         configure_llm()
-        response = LlamaSettings.llm.complete(_build_turn_prompt(state))
-        decision = parse_turn_decision(
-            response.text,
-            already_called=already,
-            already_searched=searched,
-        )
+        prompt = _build_turn_prompt(state)
+        llm_start = time.perf_counter()
+        with observe_generation("agent_turn_llm", prompt_length=len(prompt)) as gen:
+            response = LlamaSettings.llm.complete(prompt)
+            finish_generation(
+                gen,
+                response,
+                elapsed_s=time.perf_counter() - llm_start,
+                prompt_length=len(prompt),
+                output_max_len=200,
+            )
+            decision = parse_turn_decision(
+                response.text,
+                already_called=already,
+                already_searched=searched,
+            )
     except Exception:  # noqa: BLE001 — turn planning must not crash the workflow
         llm_failed = True
         logger.exception("Agent turn LLM failed")
+        safe_update(gen, level="ERROR", status_message="llm_failed")
 
     if decision is None:
         if state.tool_round == 0:

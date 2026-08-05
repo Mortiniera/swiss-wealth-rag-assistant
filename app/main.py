@@ -148,6 +148,9 @@ def maybe_startup_ingest() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.observability import init_observability
+
+    init_observability()
     maybe_startup_seed()
     maybe_startup_ingest()
     yield
@@ -156,7 +159,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Swiss Wealth RAG Assistant",
     description="Helvetia Private Bank internal operations assistant (policy RAG + structured client APIs)",
-    version="0.5.0",
+    version="0.8.0",
     lifespan=lifespan
 )
 

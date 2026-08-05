@@ -1,6 +1,9 @@
 from llama_index.core import Settings as LlamaSettings
 
+import time
+
 from app.models.schemas import ChatMessage
+from app.observability.tracing import finish_generation, observe_generation
 from app.rag.common import configure_llm
 from app.rag.generator import _format_history
 
@@ -37,7 +40,15 @@ def rewrite_query(question: str, history: list[ChatMessage] | None = None) -> st
 
     configure_llm()
     prompt = _build_rewrite_prompt(question, history)
-    response = LlamaSettings.llm.complete(prompt)
+    start = time.perf_counter()
+    with observe_generation("rewrite_llm", prompt_length=len(prompt)) as gen:
+        response = LlamaSettings.llm.complete(prompt)
+        finish_generation(
+            gen,
+            response,
+            elapsed_s=time.perf_counter() - start,
+            prompt_length=len(prompt),
+        )
     rewritten = response.text.strip()
 
     logger.info(

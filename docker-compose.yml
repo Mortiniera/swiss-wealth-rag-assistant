@@ -7,6 +7,10 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-helvetia}:${POSTGRES_PASSWORD:-helvetia}@postgres:5432/${POSTGRES_DB:-helvetia_bank}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      APP_ENV: ${APP_ENV:-dev}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
